@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="QuestLine is a simple library for future games.">
+  <title>QuestLine | Game library</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link id="favicon" rel="icon" type="image/svg+xml">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="#library" aria-label="QuestLine home"><span>Quest</span><span class="brand-line">Line</span></a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a class="active" href="#library">Games</a>
+        <a href="#rewards">Rewards</a>
+      </nav>
+      <button class="profile-button" type="button" aria-label="Open profile menu">
+        <span class="profile-avatar">JL</span>
+        <span class="profile-name">Jamie Lee</span>
+        <span aria-hidden="true">⌄</span>
+      </button>
+    </header>
+
+    <main>
+      <section class="library-section" id="library" aria-labelledby="library-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Your game library</p>
+            <h1 id="library-title">Games</h1>
+          </div>
+          <p class="library-count">03 slots</p>
+        </div>
+
+        <div class="game-grid">
+          <article class="game-card" aria-label="Game slot one">
+            <div class="game-card-number">01</div>
+            <div class="empty-card-content">
+              <span class="plus-mark" aria-hidden="true">+</span>
+              <p>Game to be added later</p>
+            </div>
+          </article>
+          <article class="game-card" aria-label="Game slot two">
+            <div class="game-card-number">02</div>
+            <div class="empty-card-content">
+              <span class="plus-mark" aria-hidden="true">+</span>
+              <p>Game to be added later</p>
+            </div>
+          </article>
+          <article class="game-card" aria-label="Game slot three">
+            <div class="game-card-number">03</div>
+            <div class="empty-card-content">
+              <span class="plus-mark" aria-hidden="true">+</span>
+              <p>Game to be added later</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="rewards-strip" id="rewards" aria-labelledby="rewards-title">
+        <div>
+          <p class="eyebrow">Keep going</p>
+          <h2 id="rewards-title">Rewards</h2>
+        </div>
+        <p>Finish an in game milestone and your progress will add up here.</p>
+        <div class="reward-score"><strong>0</strong><span>points earned</span></div>
+      </section>
+    </main>
+
+    <footer class="site-footer"><span>QuestLine © 2026</span><span>More games are on the way.</span></footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
