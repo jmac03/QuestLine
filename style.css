@@ -1,3 +1,6 @@
+/* This file defines the shared QuestLine styling system for the entire app.
+   The variables below control the base palette and type, while the later selectors shape the
+   library page, reward cards, account dialog, and other shared UI elements. */
 :root {
   /* Customize these colors together to create a new QuestLine theme. */
   /* Main dark color for headings, icons, and important text. */
@@ -17,11 +20,13 @@
   --serif: Georgia, 'Times New Roman', serif;
 }
 
+/* These globals normalize the browser defaults and establish the main page background and typography. */
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'Space Grotesk', sans-serif; }
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; font: inherit; }
+/* Shared shell and top navigation establish the site frame and keep every page visually consistent. */
 .page-shell { max-width: 1440px; margin: auto; padding: 0 5vw; }
 .site-header { height: 92px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
 .brand { display: inline-flex; align-items: flex-end; gap: 0; font-size: 1.35rem; font-weight: 700; letter-spacing: -.06em; }
@@ -32,6 +37,8 @@ button { cursor: pointer; font: inherit; }
 .main-nav a:hover, .main-nav a.active { border-color: var(--ink); color: var(--ink); }
 .profile-button { display: flex; align-items: center; gap: 10px; border: 0; background: transparent; color: var(--ink); font-size: .8rem; }
 .profile-avatar { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 50%; background: var(--blue); color: var(--ink); font-size: .65rem; font-weight: 700; }
+.profile-name { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The game library section groups the available titles and leaves space for future titles to be added. */
 .library-section { padding: 90px 0 120px; }
 .section-heading { display: flex; justify-content: space-between; align-items: end; margin-bottom: 42px; }
 .eyebrow { margin: 0 0 17px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; }
@@ -41,27 +48,113 @@ h1, h2 { margin-bottom: 0; font-size: clamp(3rem, 7vw, 6.5rem); font-weight: 500
 .game-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .game-card { position: relative; min-height: 400px; border: 1px solid var(--line); background: var(--cream); transition: transform .25s, box-shadow .25s; }
 .game-card:hover { transform: translateY(-7px); box-shadow: 7px 7px 0 var(--lime); }
+.game-card-link { display: block; color: var(--ink); }
+.featured-game-content { position: absolute; top: 50%; left: 50%; width: calc(100% - 56px); transform: translate(-50%, -50%); }
+.game-kicker { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .08em; text-transform: uppercase; }
+.featured-game-content h2 { margin: 21px 0 15px; font-size: clamp(2.8rem, 5vw, 4.5rem); line-height: .88; }
+.featured-game-content > p { margin-bottom: 26px; color: var(--muted); font-size: .82rem; }
+.play-link { display: inline-flex; align-items: center; gap: 12px; padding-bottom: 5px; border-bottom: 1px solid var(--ink); font-family: 'DM Mono', monospace; font-size: .68rem; text-transform: uppercase; }
+.play-link span { color: var(--blue); font-size: 1rem; }
 .game-card-number { position: absolute; top: 17px; left: 19px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .68rem; }
 .empty-card-content { position: absolute; top: 50%; left: 50%; display: grid; justify-items: center; gap: 18px; color: var(--muted); text-align: center; transform: translate(-50%, -50%); }
 .plus-mark { display: grid; place-items: center; width: 56px; height: 56px; border: 1px solid var(--ink); border-radius: 50%; color: var(--ink); font-size: 2rem; font-weight: 300; line-height: 1; }
 .empty-card-content p { width: max-content; margin: 0; font-family: 'DM Mono', monospace; font-size: .65rem; text-transform: uppercase; }
+/* The rewards area summarizes points and keeps the milestone/progression cards visually separated from the game list. */
 .rewards-strip { display: grid; grid-template-columns: 1.1fr 1fr .65fr; gap: 40px; align-items: end; padding: 65px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .rewards-strip h2 { font-size: clamp(2.5rem, 5vw, 4.5rem); }
 .rewards-strip > p { max-width: 300px; margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.6; }
 .reward-score { justify-self: end; text-align: right; }
 .reward-score strong { display: block; color: var(--blue); font-family: var(--serif); font-size: 4.5rem; font-weight: 400; letter-spacing: -.08em; line-height: .8; }
 .reward-score span { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .65rem; text-transform: uppercase; }
+.reward-details { padding: 34px 0 80px; }
+.reward-status { min-height: 1.3em; margin: 0 0 22px; color: var(--muted); font-size: .85rem; }
+.reward-status.is-error { color: #a42d24; }
+.reward-track-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 22px; }
+.reward-track-card { padding: 26px; border: 1px solid var(--line); background: #fbfaf6; }
+.reward-track-card.is-selected { border-color: var(--ink); box-shadow: 5px 5px 0 var(--lime); }
+.reward-track-header { display: flex; justify-content: space-between; align-items: start; gap: 18px; }
+.reward-track-kicker, .selected-track-label, .track-progress-heading, .milestone-points, .milestone-state, .grant-track, .grant-date { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .65rem; text-transform: uppercase; }
+.reward-track-kicker { margin: 0 0 10px; letter-spacing: .08em; }
+.reward-track-header h3, .reward-subheading h3 { margin: 0; font-size: 1.65rem; font-weight: 500; letter-spacing: -.06em; }
+.selected-track-label { padding: 7px 9px; background: var(--lime); color: var(--ink); white-space: nowrap; }
+.reward-track-description { margin: 16px 0 24px; color: var(--muted); font-size: .84rem; line-height: 1.55; }
+.track-progress-heading { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
+.track-progress { height: 7px; overflow: hidden; background: var(--cream); }
+.track-progress span { display: block; height: 100%; background: var(--blue); transition: width .25s ease; }
+.milestone-list { display: grid; gap: 0; margin: 22px 0 0; padding: 0; list-style: none; }
+.milestone-item { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 15px 0; border-top: 1px solid var(--line); }
+.milestone-item.is-reached .milestone-points, .milestone-item.is-reached .milestone-state { color: var(--ink); }
+.milestone-item strong { display: block; font-size: .82rem; font-weight: 600; }
+.milestone-reward { display: block; margin-top: 5px; color: var(--muted); font-size: .75rem; line-height: 1.4; overflow-wrap: anywhere; }
+.milestone-empty, .track-selection-note { margin: 20px 0 0; color: var(--muted); font-size: .78rem; }
+.select-track-button { width: 100%; margin-top: 22px; padding: 12px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); font-size: .78rem; }
+.select-track-button:hover:not(:disabled) { background: var(--blue); color: var(--ink); }
+.select-track-button:disabled { cursor: wait; opacity: .65; }
+.granted-rewards { margin-top: 64px; }
+.reward-subheading { margin-bottom: 20px; }
+.reward-subheading .eyebrow { margin-bottom: 10px; }
+.grant-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.grant-item { display: grid; align-content: start; gap: 8px; min-height: 130px; padding: 19px; border: 1px solid var(--line); background: var(--cream); }
+.grant-name { font-family: var(--serif); font-size: 1.35rem; font-weight: 400; }
+.grant-payload { color: var(--muted); font-size: .78rem; line-height: 1.45; overflow-wrap: anywhere; }
+.grant-date { margin-top: auto; }
+.equip-theme-button, .default-theme-button { padding: 9px 12px; border: 1px solid var(--ink); background: transparent; color: var(--ink); font-size: .75rem; }
+.equip-theme-button:hover:not(:disabled), .default-theme-button:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
+.equip-theme-button:disabled, .default-theme-button:disabled { cursor: default; opacity: .6; }
+.default-theme-button { margin: 0 0 22px; }
+.theme-status { margin: 0 0 18px; color: #a42d24; font-size: .8rem; line-height: 1.5; }
 .site-footer { display: flex; justify-content: space-between; padding: 25px 0; border-top: 1px solid var(--line); color: var(--muted); font-family: 'DM Mono', monospace; font-size: .62rem; text-transform: uppercase; }
+.music-player { display: flex; align-items: center; gap: 18px; margin: 0 0 32px; padding: 16px 18px; border: 1px solid var(--line); background: var(--cream); }
+.music-player-info { display: grid; gap: 4px; min-width: 130px; }
+.music-player .eyebrow { margin: 0; font-size: .58rem; }
+.music-title { font-family: var(--serif); font-size: 1.05rem; }
+.music-toggle { display: grid; place-items: center; width: 35px; height: 35px; padding: 0; border: 1px solid var(--ink); border-radius: 50%; background: var(--ink); color: var(--paper); font-size: .75rem; }
+.music-toggle:hover { background: var(--blue); color: var(--ink); }
+.volume-control { display: flex; align-items: center; gap: 10px; margin-left: auto; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .62rem; text-transform: uppercase; }
+.volume-control input { width: 130px; accent-color: var(--ink); }
+.volume-control output { min-width: 30px; color: var(--ink); text-align: right; }
+/* The auth modal styles the sign-in and sign-up experience without disrupting the underlying library layout. */
+.auth-dialog { width: min(440px, calc(100% - 36px)); padding: 32px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
+.auth-dialog::backdrop { background: rgb(31 37 34 / 55%); }
+.auth-dialog-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 28px; }
+.auth-dialog .eyebrow { margin-bottom: 12px; }
+.auth-dialog h2 { font-size: clamp(2rem, 8vw, 3rem); }
+.dialog-close { border: 0; background: transparent; color: var(--muted); font-size: 1.8rem; line-height: 1; }
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+.auth-tab { padding: 12px 4px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: .8rem; }
+.auth-tab.active { border-color: var(--ink); color: var(--ink); }
+#auth-form { display: grid; gap: 10px; }
+#auth-form label, .account-label { margin-top: 7px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .68rem; text-transform: uppercase; }
+#auth-form input { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 0; background: #fff; color: var(--ink); font: inherit; }
+#auth-form input:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+.auth-submit { width: 100%; margin-top: 14px; padding: 13px 16px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); font-size: .8rem; }
+.auth-submit:hover:not(:disabled) { background: var(--blue); color: var(--ink); }
+.auth-submit:disabled { cursor: wait; opacity: .65; }
+.auth-message { min-height: 1.2em; margin: 14px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.5; }
+.auth-message.is-error { color: #a42d24; }
+.account-email { margin: 10px 0 18px; overflow-wrap: anywhere; font-size: 1rem; }
+.account-label { margin: 0; }
+.sign-out-button { margin-top: 0; }
+[hidden] { display: none !important; }
+/* Responsive behavior collapses the three-column layout into stacked sections so the page stays usable on phones. */
 @media (max-width: 760px) {
   .page-shell { padding: 0 22px; }
   .site-header { height: 75px; }
   .main-nav { display: none; }
   .profile-name { display: none; }
+  .auth-dialog { padding: 25px; }
   .library-section { padding: 65px 0 80px; }
   .section-heading { align-items: start; flex-direction: column; gap: 20px; }
   .game-grid { grid-template-columns: 1fr; }
   .game-card { min-height: 290px; }
   .rewards-strip { grid-template-columns: 1fr; gap: 28px; }
   .reward-score { justify-self: start; text-align: left; }
+  .reward-details { padding-bottom: 60px; }
+  .reward-track-card { padding: 21px; }
+  .milestone-item { grid-template-columns: 60px minmax(0, 1fr); }
+  .milestone-state { grid-column: 2; }
   .site-footer { gap: 15px; flex-direction: column; }
+  .music-player { align-items: start; flex-wrap: wrap; }
+  .volume-control { width: 100%; margin-left: 0; }
+  .volume-control input { flex: 1; width: auto; }
 }

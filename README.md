@@ -1,10 +1,41 @@
 # QuestLine
 
-QuestLine is a standalone front-end layout for a personal library of games. It currently contains three reserved game slots that can be filled later.
+QuestLine is a front-end layout for a personal game library. It includes Number Roll, a Supabase-backed energy and score game, plus two reserved game slots.
 
-## Open it in VS Code
+## Quick reading guide
 
-Open `index.html` in a browser, or use the **Live Server** extension in VS Code if you want automatic refreshes while editing. No build step, JavaScript, database, account, or API is required.
+This project is easiest to understand by reading it in this order:
+
+1. `index.html` defines the library page structure and the reward/account UI.
+2. `style.css` governs the shared visual system and page layout.
+3. `supabase-client.js` wires the browser to the Supabase project.
+4. `site-ui.js` owns shared favicon and background-music behavior.
+5. `app.js` loads reward data and handles sign-in / sign-out.
+6. `reward-theme.js` validates and applies earned color themes.
+7. `number-roll.html`, `number-roll.css`, and `number-roll.js` build the actual game screen.
+8. `assets/` contains the trimmed background music tracks.
+
+## Run the app
+
+Serve the project over HTTP using the **Live Server** extension in VS Code or another static web server. The app uses the Supabase JavaScript CDN and connects to project `obbxdederwlzeoudajhi`. The project URL and browser-safe publishable key are configured in `supabase-client.js`; never put a Supabase secret or service-role key in frontend code.
+
+## Login and Supabase setup
+
+1. In the Supabase dashboard for project `obbxdederwlzeoudajhi`, enable **Authentication → Providers → Email**.
+2. Set **Authentication → URL Configuration → Site URL** to the deployed app's base URL.
+3. Add the app URLs to **Redirect URLs**: at minimum the hosted `index.html` and `number-roll.html` URLs. For local testing, allow the matching Live Server origin and paths (for example `http://127.0.0.1:5500/**`).
+4. Use the profile control on the library page to create an account or sign in. If email confirmations are enabled, new users must follow the confirmation link before their account has a session.
+5. Once signed in, select **Number Roll**. Its separate page restores the same-origin Supabase session and gates game access on a signed-in user.
+
+The game invokes the existing `get_roll_state` and `roll_number` Postgres RPC functions as the authenticated user. Both functions must be available to the `authenticated` role; the roll function must validate energy and award score server-side. The page does not calculate or persist scores in the browser.
+
+The library's Rewards section loads active reward tracks, the signed-in user's selection and point progress, track milestones, and granted rewards. Select a track with **Choose this track**; the page saves the choice through the `select_reward_track` RPC. These reward tables and the RPC must be available to the authenticated user in Supabase.
+
+An earned color-scheme grant can be equipped from its reward-history card. The equipped grant ID is saved in browser `localStorage`, scoped to the signed-in user's ID. On each page load, color values are read only from that authenticated user's `user_reward_grants` rows and validated before applying them as CSS custom-property overrides; a cached ID is used only if it matches a verified grant. The stylesheet's `:root` values remain the defaults. The grants table must only allow users to read their own rows; grant creation and modification should remain server-controlled. If the grant cannot be verified, the app reverts to the defaults. This browser-side preference is cosmetic and must not be used as proof of reward ownership by server-side features.
+
+## Number Roll
+
+Each roll costs one energy. The game page shows current/max energy, total and best score, the most recent number with backend-provided rarity and badges, and the five most recent rolls. When opened or brought back into view, it calls `get_roll_state` again and refreshes the displayed energy and scores from Supabase. If the user is out of energy, reopening the game checks the current server-side state and enables rolling again if energy is available. Roll generation, scoring, and energy are owned by the Supabase RPCs. If the user is signed out, the game offers a link to sign in or create an account and returns to the game after successful sign-in.
 
 ## What each file does
 
@@ -12,9 +43,9 @@ Open `index.html` in a browser, or use the **Live Server** extension in VS Code 
 
 HTML is the language used to describe what appears on a web page. Tags such as `<header>`, `<main>`, `<section>`, and `<footer>` divide the page into meaningful regions.
 
-- The `<header>` contains the QuestLine wordmark, navigation links, and the example profile control.
-- The library `<section>` is the main page. It contains three empty cards, each labeled as a future game slot.
-- The rewards `<section>` remains separate from the grid so progress can be added without changing the library layout.
+- The `<header>` contains the QuestLine wordmark, navigation links, and the account control.
+- The library `<section>` is the main page. It links to Number Roll and has two reserved game slots.
+- The rewards sections display available reward tracks, point progress, milestones, and granted rewards without changing the library layout.
 
 ### `style.css`: the visual design
 
@@ -26,7 +57,7 @@ CSS is the language that controls appearance and layout. Variables such as `--bl
 - The `:hover` rule gives the empty cards a small response without making them look like finished games.
 - The `@media` rule changes the three-column grid into a single column on smaller screens. This is called responsive design.
 
-The small `app.js` file reads the CSS color variables and uses them to create the browser-tab `QL` logo. This keeps the favicon synchronized when a future customization feature changes the theme.
+The `supabase-client.js` file creates the browser client for this Supabase project. The `site-ui.js` file provides shared favicon and background-music behavior. The `app.js` file handles account creation, sign-in, session restoration, sign out, and reward track data on the library page. The `number-roll.html` and `number-roll.js` files provide the separate, authenticated game page and call the database RPCs.
 
 ### Color choices
 

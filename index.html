@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<!-- This is the QuestLine game library page.
+     It is the landing screen for the project: it shows the game list,
+     links to the Number Roll game, and contains the reward section and account dialog. -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,37 +16,41 @@
 </head>
 <body>
   <div class="page-shell">
+    <!-- The top bar is shared across pages and keeps the app branding, account area, and navigation consistent. -->
     <header class="site-header">
       <a class="brand" href="#library" aria-label="QuestLine home"><span>Quest</span><span class="brand-line">Line</span></a>
       <nav class="main-nav" aria-label="Main navigation">
         <a class="active" href="#library">Games</a>
         <a href="#rewards">Rewards</a>
       </nav>
-      <button class="profile-button" type="button" aria-label="Open profile menu">
-        <span class="profile-avatar">JL</span>
-        <span class="profile-name">Jamie Lee</span>
+      <button class="profile-button" id="profile-button" type="button" aria-label="Sign in or manage your account">
+        <span class="profile-avatar" id="profile-avatar" aria-hidden="true">?</span>
+        <span class="profile-name" id="profile-name">Sign in</span>
         <span aria-hidden="true">⌄</span>
       </button>
     </header>
 
     <main>
+      <!-- The main game library area showcases each available game. Right now the first slot links to Number Roll. -->
       <section class="library-section" id="library" aria-labelledby="library-title">
         <div class="section-heading">
           <div>
             <p class="eyebrow">Your game library</p>
             <h1 id="library-title">Games</h1>
           </div>
-          <p class="library-count">03 slots</p>
+          <p class="library-count">01 game · 02 coming soon</p>
         </div>
 
         <div class="game-grid">
-          <article class="game-card" aria-label="Game slot one">
+        <a class="game-card game-card-link" href="number-roll.html" aria-label="Play Number Roll">
             <div class="game-card-number">01</div>
-            <div class="empty-card-content">
-              <span class="plus-mark" aria-hidden="true">+</span>
-              <p>Game to be added later</p>
-            </div>
-          </article>
+          <div class="featured-game-content">
+            <span class="game-kicker">QuestLine mini-game</span>
+            <h2>Number<br>Roll</h2>
+            <p>Spend energy. Chase a rare roll.</p>
+            <span class="play-link">Play game <span aria-hidden="true">→</span></span>
+          </div>
+        </a>
           <article class="game-card" aria-label="Game slot two">
             <div class="game-card-number">02</div>
             <div class="empty-card-content">
@@ -61,18 +68,83 @@
         </div>
       </section>
 
+      <!-- Reward data appears below the library and gives players a summary of points and the currently selected progression track. -->
       <section class="rewards-strip" id="rewards" aria-labelledby="rewards-title">
         <div>
-          <p class="eyebrow">Keep going</p>
+          <p class="eyebrow">Choose your path</p>
           <h2 id="rewards-title">Rewards</h2>
         </div>
-        <p>Finish an in game milestone and your progress will add up here.</p>
-        <div class="reward-score"><strong>0</strong><span>points earned</span></div>
+        <p>Choose a reward track and build points as you play. Each milestone brings you closer to your next reward.</p>
+        <div class="reward-score"><strong id="reward-points">—</strong><span>points earned</span></div>
+      </section>
+      <section class="reward-details" aria-label="Reward track details">
+        <p class="reward-status" id="reward-status" role="status" aria-live="polite">Sign in to view your reward tracks.</p>
+        <button class="default-theme-button" id="default-theme-button" type="button" hidden>Use default colors</button>
+        <div class="reward-track-grid" id="reward-track-grid"></div>
+        <section class="granted-rewards" id="granted-rewards" aria-labelledby="granted-rewards-title" hidden>
+          <div class="reward-subheading">
+            <p class="eyebrow">What you have earned</p>
+            <h3 id="granted-rewards-title">Reward history</h3>
+          </div>
+          <ul class="grant-list" id="grant-list"></ul>
+        </section>
+      </section>
+      <section class="music-player" aria-label="Background music">
+        <audio id="background-music" src="assets/Big_Waves.wav" loop preload="auto"></audio>
+        <div class="music-player-info">
+          <span class="eyebrow">Now playing</span>
+          <span class="music-title">Big Waves</span>
+        </div>
+        <button class="music-toggle" id="music-toggle" type="button" aria-label="Pause background music" aria-pressed="true">
+          <span aria-hidden="true">Ⅱ</span>
+        </button>
+        <label class="volume-control" for="music-volume">
+          <span aria-hidden="true">Volume</span>
+          <input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.35" aria-label="Background music volume">
+          <output id="music-volume-value" for="music-volume">35%</output>
+        </label>
       </section>
     </main>
 
     <footer class="site-footer"><span>QuestLine © 2026</span><span>More games are on the way.</span></footer>
   </div>
+  <!-- This modal dialog handles sign-in, account creation, and sign-out without leaving the library page. -->
+  <dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-title">
+    <div class="auth-dialog-header">
+      <div>
+        <p class="eyebrow">Your QuestLine account</p>
+        <h2 id="auth-title">Welcome back</h2>
+      </div>
+      <button class="dialog-close" id="dialog-close" type="button" aria-label="Close account dialog">×</button>
+    </div>
+
+    <div id="auth-form-view">
+      <div class="auth-tabs" role="group" aria-label="Account action">
+        <button class="auth-tab active" id="sign-in-tab" type="button" aria-pressed="true">Sign in</button>
+        <button class="auth-tab" id="sign-up-tab" type="button" aria-pressed="false">Create account</button>
+      </div>
+      <form id="auth-form">
+        <label for="auth-email">Email</label>
+        <input id="auth-email" name="email" type="email" autocomplete="email" required>
+        <label for="auth-password">Password</label>
+        <input id="auth-password" name="password" type="password" autocomplete="current-password" required>
+        <button class="auth-submit" id="auth-submit" type="submit">Sign in</button>
+      </form>
+      <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="account-view" id="account-view" hidden>
+      <p class="account-label">Signed in as</p>
+      <p class="account-email" id="account-email"></p>
+      <button class="auth-submit sign-out-button" id="sign-out-button" type="button">Sign out</button>
+      <p class="auth-message" id="account-message" role="status" aria-live="polite"></p>
+    </div>
+  </dialog>
+  <!-- The page loads the Supabase client, the project client config, the theme module, and the app logic in order. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
+  <script src="site-ui.js"></script>
+  <script src="reward-theme.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
