@@ -18,7 +18,6 @@ const localSongCatalog = Object.freeze([
     artist: null,
     audio_url: 'assets/Fire_Behind_the_Weave.wav',
     duration_seconds: null,
-    is_default: true,
   }),
   Object.freeze({
     id: 'number-roller',

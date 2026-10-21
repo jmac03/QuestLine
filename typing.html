@@ -122,4 +122,17 @@
       <section class="music-player" aria-label="Background music">
         <audio id="background-music" src="assets/Big_Waves.wav" loop preload="auto"></audio>
         <div class="music-player-info"><span class="eyebrow">Now playing</span><span class="music-title">Big Waves</span></div>
-        <button class="music-toggle" id="music-toggle" type="button" aria-label="Pause background musi
+        <button class="music-toggle" id="music-toggle" type="button" aria-label="Pause background music" aria-pressed="true"><span aria-hidden="true">â€¦</span></button>
+        <label class="volume-control" for="music-volume"><span aria-hidden="true">Volume</span><input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.35" aria-label="Background music volume"><output id="music-volume-value" for="music-volume">35%</output></label>
+      </section>
+    </main>
+
+    <footer class="site-footer"><span>QuestLine © 2026</span><span>Small rounds. Real progress.</span></footer>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js"></script>
+  <script src="song-rewards.js"></script>
+  <script src="site-ui.js"></script>
+  <script src="typing.js"></script>
+</body>
+</html>

@@ -15,7 +15,7 @@ This project is easiest to understand by reading it in this order:
 7. `number-roll.html`, `number-roll.css`, and `number-roll.js` build the actual game screen.
 8. `typing.html`, `typing.css`, and `typing.js` build the second game: settings, timed gameplay, sentence/word prompts, and local personal-best tracking.
 9. `assets/` contains the trimmed background music tracks.
-10. `song-rewards.js` contains the local song catalog and filters it using the signed-in user's reward grants.
+10. `song-rewards.js` contains the local song catalog and combines built-in songs with the signed-in user's reward grants.
 
 ## Run the app
 
@@ -33,7 +33,7 @@ The game invokes the existing `get_roll_state` and `roll_number` Postgres RPC fu
 
 The library's Rewards section loads active reward tracks, the signed-in user's selection and point progress, track milestones, and granted rewards. Select a track with **Choose this track**; the page saves the choice through the `select_reward_track` RPC. These reward tables and the RPC must be available to the authenticated user in Supabase.
 
-Song rewards are currently stored in the app's local catalog in `song-rewards.js`. Grant creation remains server-controlled: write a payload such as `{"type":"song","song_id":"big-waves"}` into the existing `user_reward_grants.reward_payload` column. The future picker can call `window.questLineSongs.listOwned()`, which reads the signed-in user's grants and returns only catalog songs referenced by those grants. No song table or migration is required yet.
+Song rewards are currently stored in the app's local catalog in `song-rewards.js`. Grant creation remains server-controlled: write a payload such as `{"type":"song","song_id":"fire-behind-the-weave"}` into the existing `user_reward_grants.reward_payload` column. The music picker combines the built-in songs with songs returned by `window.questLineSongs.listOwned()`. Music preferences are stored in browser `localStorage` per signed-in user; a page override wins over the profile default, which wins over that page's built-in song. No song table or migration is required.
 
 The migration `supabase/migrations/20261019000001_song_reward_grants.sql` adds the server-only `grant_song_reward` helper for creating that payload without storing song metadata in Supabase.
 

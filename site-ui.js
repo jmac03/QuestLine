@@ -19,9 +19,9 @@ const musicPage = document.body.dataset.musicPage || 'library';
 const musicBuiltInDefault = document.body.dataset.musicDefault || 'big-waves';
 
 function readMusicPreferences(userId) {
-  if (!userId) return { defaultSongId: null, pages: {} };
+  const storageId = userId || 'guest';
   try {
-    const value = JSON.parse(localStorage.getItem(`${musicPreferencePrefix}${userId}`) || '{}');
+    const value = JSON.parse(localStorage.getItem(`${musicPreferencePrefix}${storageId}`) || '{}');
     return { defaultSongId: value.defaultSongId || null, pages: value.pages || {} };
   } catch {
     return { defaultSongId: null, pages: {} };
@@ -29,7 +29,8 @@ function readMusicPreferences(userId) {
 }
 
 function writeMusicPreferences(userId, preferences) {
-  if (userId) localStorage.setItem(`${musicPreferencePrefix}${userId}`, JSON.stringify(preferences));
+  const storageId = userId || 'guest';
+  localStorage.setItem(`${musicPreferencePrefix}${storageId}`, JSON.stringify(preferences));
 }
 
 function setupMusicPlayer() {
@@ -44,6 +45,8 @@ function setupMusicPlayer() {
   let currentUser = null;
   let availableSongs = [];
   let currentSong = null;
+  let musicReady = false;
+  let songLoadRequest = 0;
 
   if (Number.isFinite(savedVolume)) volume.value = String(Math.min(1, Math.max(0, savedVolume)));
 
@@ -70,6 +73,7 @@ function setupMusicPlayer() {
   function playCurrentSong(song) {
     if (!song || currentSong?.id === song.id) return;
     const wasPlaying = !audio.paused;
+    isPlaying = false;
     audio.src = song.audio_url;
     audio.load();
     currentSong = song;
@@ -86,11 +90,16 @@ function setupMusicPlayer() {
   }
 
   async function loadSongs(user) {
+    const request = ++songLoadRequest;
     currentUser = user;
-    availableSongs = await (window.questLineSongs?.listAvailable?.() || []);
+    const songs = await (window.questLineSongs?.listAvailable?.() || []);
+    if (request !== songLoadRequest) return;
+    availableSongs = songs;
     renderSongs();
     playCurrentSong(resolveSong(readMusicPreferences(user?.id)));
+    musicReady = true;
     window.dispatchEvent(new CustomEvent('questline:music-ready', { detail: { songs: availableSongs, user } }));
+    playMusic();
   }
 
   function updateVolume() {
@@ -101,7 +110,7 @@ function setupMusicPlayer() {
   }
 
   function playMusic() {
-    if (isPlaying) return;
+    if (!musicReady || isPlaying) return;
 
     audio.play().then(() => {
       isPlaying = true;
@@ -122,14 +131,15 @@ function setupMusicPlayer() {
   });
 
   songSelect.addEventListener('change', () => {
-    if (!currentUser) {
+    const preferences = readMusicPreferences(currentUser?.id);
+    const chosenSong = availableSongs.find((song) => song.id === songSelect.value);
+    if (!currentUser && chosenSong && !chosenSong.is_default) {
       songSelect.value = '';
       return;
     }
-    const preferences = readMusicPreferences(currentUser.id);
     if (songSelect.value) preferences.pages[musicPage] = songSelect.value;
     else delete preferences.pages[musicPage];
-    writeMusicPreferences(currentUser.id, preferences);
+    writeMusicPreferences(currentUser?.id, preferences);
     playCurrentSong(resolveSong(preferences));
   });
 
@@ -141,12 +151,19 @@ function setupMusicPlayer() {
 
   updateVolume();
   updateControls(false);
-  loadSongs(null).catch(() => {});
   if (window.questLineSupabase) {
-    window.questLineSupabase.auth.getSession().then(({ data }) => loadSongs(data.session?.user || null)).catch(() => {});
-    window.questLineSupabase.auth.onAuthStateChange((_event, session) => loadSongs(session?.user || null).catch(() => {}));
+    window.questLineSupabase.auth.onAuthStateChange((_event, session) => {
+      loadSongs(session?.user || null).catch((error) => console.error('Could not load background music.', error));
+    });
+    window.questLineSupabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        return loadSongs(data.session?.user || null);
+      })
+      .catch((error) => console.error('Could not load background music preferences.', error));
+  } else {
+    loadSongs(null).catch((error) => console.error('Could not load background music.', error));
   }
-  playMusic();
 
   window.questLineMusic = {
     getAvailableSongs: () => [...availableSongs],

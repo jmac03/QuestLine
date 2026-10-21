@@ -111,6 +111,8 @@ h1, h2 { margin-bottom: 0; font-size: clamp(3rem, 7vw, 6.5rem); font-weight: 500
 .music-player-info { display: grid; gap: 4px; min-width: 130px; }
 .music-player .eyebrow { margin: 0; font-size: .58rem; }
 .music-title { font-family: var(--serif); font-size: 1.05rem; }
+.music-song-control { display: grid; gap: 4px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .62rem; text-transform: uppercase; }
+.music-song-select, .account-music-setting select { min-width: 170px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 0; background: var(--paper); color: var(--ink); font: inherit; font-size: .72rem; }
 .music-toggle { display: grid; place-items: center; width: 35px; height: 35px; padding: 0; border: 1px solid var(--ink); border-radius: 50%; background: var(--ink); color: var(--paper); font-size: .75rem; }
 .music-toggle:hover { background: var(--blue); color: var(--ink); }
 .volume-control { display: flex; align-items: center; gap: 10px; margin-left: auto; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .62rem; text-transform: uppercase; }
@@ -136,6 +138,9 @@ h1, h2 { margin-bottom: 0; font-size: clamp(3rem, 7vw, 6.5rem); font-weight: 500
 .auth-message { min-height: 1.2em; margin: 14px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.5; }
 .auth-message.is-error { color: #a42d24; }
 .account-email { margin: 10px 0 18px; overflow-wrap: anywhere; font-size: 1rem; }
+.account-music-setting { display: grid; gap: 8px; margin: 20px 0; padding: 15px; border: 1px solid var(--line); background: var(--cream); }
+.account-music-setting label { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .68rem; text-transform: uppercase; }
+.account-music-setting small { color: var(--muted); font-size: .72rem; line-height: 1.4; }
 .account-label { margin: 0; }
 .sign-out-button { margin-top: 0; }
 [hidden] { display: none !important; }
