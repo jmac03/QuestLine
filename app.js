@@ -28,6 +28,7 @@ const authSubmit = document.querySelector('#auth-submit');
 const authMessage = document.querySelector('#auth-message');
 const accountEmail = document.querySelector('#account-email');
 const accountMessage = document.querySelector('#account-message');
+const defaultSongSelect = document.querySelector('#default-song-select');
 const signOutButton = document.querySelector('#sign-out-button');
 const signInTab = document.querySelector('#sign-in-tab');
 const signUpTab = document.querySelector('#sign-up-tab');
@@ -41,6 +42,14 @@ let isSigningUp = false;
 let activeUser = null;
 let rewardRequestId = 0;
 let equippedColorThemeGrantId = null;
+
+function renderDefaultSongSelect(songs = window.questLineMusic?.getAvailableSongs?.() || []) {
+  if (!defaultSongSelect) return;
+  const currentValue = window.questLineMusic?.getPreferences?.().defaultSongId || '';
+  defaultSongSelect.replaceChildren(new Option('Use each page\'s built-in song', ''));
+  for (const song of songs) defaultSongSelect.append(new Option(song.title, song.id));
+  defaultSongSelect.value = currentValue;
+}
 
 const supabaseClient = window.questLineSupabase;
 
@@ -67,6 +76,34 @@ function appendTextElement(parent, tagName, className, text) {
   return element;
 }
 
+function getSongRewardId(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+  return payload.type === 'song' && typeof payload.song_id === 'string'
+    ? payload.song_id
+    : null;
+}
+
+async function claimSongReward(milestone, button) {
+  if (!activeUser || !supabaseClient) return;
+
+  button.disabled = true;
+  button.textContent = 'Claiming…';
+  setRewardStatus('Claiming your song reward…');
+  try {
+    const { data, error } = await supabaseClient.functions.invoke('claim-song-reward', {
+      body: { milestone_id: milestone.id },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    await loadRewardData(activeUser);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    setRewardStatus(`Could not claim this song: ${message}`, true);
+    button.disabled = false;
+    button.textContent = 'Claim song';
+  }
+}
+
 // This function creates the cards that show all active reward tracks,
 // their progress toward each milestone, and the list of rewards already granted.
 function renderRewardTracks(tracks, selection, progressRows, milestones, grants) {
@@ -76,6 +113,7 @@ function renderRewardTracks(tracks, selection, progressRows, milestones, grants)
   const selectedTrackId = selection?.track_id;
   const progressByTrack = new Map(progressRows.map((progress) => [progress.track_id, progress]));
   const trackById = new Map(tracks.map((track) => [track.id, track]));
+  const grantedSongIds = new Set(grants.map((grant) => getSongRewardId(grant.reward_payload)).filter(Boolean));
   const selectedProgress = progressByTrack.get(selectedTrackId);
   const totalPoints = selectedProgress
     ? Number(selectedProgress.points) || 0
@@ -146,8 +184,19 @@ function renderRewardTracks(tracks, selection, progressRows, milestones, grants)
         appendTextElement(detail, 'strong', '', milestone.name || 'Milestone reward');
         const payloadText = formatRewardPayload(milestone.reward_payload);
         if (payloadText) appendTextElement(detail, 'span', 'milestone-reward', payloadText);
+        const songId = getSongRewardId(milestone.reward_payload);
+        const songAlreadyGranted = songId && grantedSongIds.has(songId);
+        if (songId && reached && isSelected) {
+          const claimButton = document.createElement('button');
+          claimButton.className = 'claim-reward-button';
+          claimButton.type = 'button';
+          claimButton.textContent = songAlreadyGranted ? 'Song claimed' : 'Claim song';
+          claimButton.disabled = Boolean(songAlreadyGranted);
+          if (!songAlreadyGranted) claimButton.addEventListener('click', () => claimSongReward(milestone, claimButton));
+          detail.append(claimButton);
+        }
         item.append(detail);
-        appendTextElement(item, 'span', 'milestone-state', reached ? 'Reached' : 'Upcoming');
+        appendTextElement(item, 'span', 'milestone-state', songAlreadyGranted ? 'Claimed' : reached ? 'Reached' : 'Upcoming');
         milestoneList.append(item);
       }
       card.append(milestoneList);
@@ -389,8 +438,21 @@ function showAccount(user) {
   accountView.hidden = !user;
   authTitle.textContent = user ? 'Your account' : isSigningUp ? 'Create your account' : 'Welcome back';
   accountEmail.textContent = user?.email || '';
+  renderDefaultSongSelect();
   setAccountMessage('');
 }
+
+window.addEventListener('questline:music-ready', (event) => {
+  renderDefaultSongSelect(event.detail?.songs || []);
+});
+
+defaultSongSelect?.addEventListener('change', async () => {
+  try {
+    await window.questLineMusic?.setDefaultSong(defaultSongSelect.value);
+  } catch (error) {
+    setAccountMessage(error instanceof Error ? error.message : 'Could not save your music preference.', true);
+  }
+});
 
 // The account dialog is the entry point for sign-in, sign-up, and sign-out.
 // This section wires the user actions to the same Supabase auth flow used across the app.

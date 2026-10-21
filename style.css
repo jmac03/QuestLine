@@ -86,6 +86,9 @@ h1, h2 { margin-bottom: 0; font-size: clamp(3rem, 7vw, 6.5rem); font-weight: 500
 .milestone-item.is-reached .milestone-points, .milestone-item.is-reached .milestone-state { color: var(--ink); }
 .milestone-item strong { display: block; font-size: .82rem; font-weight: 600; }
 .milestone-reward { display: block; margin-top: 5px; color: var(--muted); font-size: .75rem; line-height: 1.4; overflow-wrap: anywhere; }
+.claim-reward-button { margin-top: 10px; padding: 7px 10px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); font-size: .7rem; }
+.claim-reward-button:hover:not(:disabled) { background: var(--blue); color: var(--ink); }
+.claim-reward-button:disabled { cursor: default; opacity: .6; }
 .milestone-empty, .track-selection-note { margin: 20px 0 0; color: var(--muted); font-size: .78rem; }
 .select-track-button { width: 100%; margin-top: 22px; padding: 12px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); font-size: .78rem; }
 .select-track-button:hover:not(:disabled) { background: var(--blue); color: var(--ink); }

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<!-- This page contains the Type Sprint setup, typing round, and results view. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Practice speed and accuracy with clean typing prompts in QuestLine Type Sprint.">
+  <title>Type Sprint | QuestLine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="typing.css">
+  <link id="favicon" rel="icon" type="image/svg+xml">
+</head>
+<body data-music-page="typing" data-music-default="big-waves">
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="QuestLine game library">
+        <span>Quest</span><span class="brand-line">Line</span>
+      </a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a class="active" href="index.html">Games</a>
+        <a href="index.html#rewards">Rewards</a>
+      </nav>
+      <div class="game-header-note">TYPE SPRINT <span>·</span> GAME 02</div>
+    </header>
+
+    <main class="typing-page">
+      <a class="back-link" href="index.html"><span aria-hidden="true">←</span> All games</a>
+
+      <section class="typing-heading" aria-labelledby="typing-title">
+        <div>
+          <p class="eyebrow">A quiet race against yourself</p>
+          <h1 id="typing-title">Type Sprint</h1>
+          <p class="game-intro">Choose a pace, type the prompt exactly, and keep your accuracy high. Every round uses clean, family-friendly words and sentences.</p>
+        </div>
+        <div class="personal-best">
+          <span class="eyebrow">Personal best</span>
+          <strong id="best-wpm">—</strong>
+          <span>WPM</span>
+        </div>
+      </section>
+
+      <section class="typing-shell" aria-label="Type Sprint game">
+        <div class="settings-panel" id="settings-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">01 / Set the rules</p>
+              <h2>Ready when you are.</h2>
+            </div>
+            <span class="setup-mark" aria-hidden="true">⌁</span>
+          </div>
+
+          <div class="setting-group">
+            <span class="setting-label">Round length</span>
+            <div class="choice-row" role="group" aria-label="Round length">
+              <button class="choice-button" data-setting="duration" data-value="15" type="button">15 sec</button>
+              <button class="choice-button is-selected" data-setting="duration" data-value="30" type="button">30 sec</button>
+              <button class="choice-button" data-setting="duration" data-value="60" type="button">60 sec</button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <span class="setting-label">Prompt pack</span>
+            <div class="choice-row" role="group" aria-label="Prompt pack">
+              <button class="choice-button is-selected" data-setting="pack" data-value="sentences" type="button">Sentences</button>
+              <button class="choice-button" data-setting="pack" data-value="words" type="button">Word bursts</button>
+            </div>
+          </div>
+
+          <div class="pack-note">
+            <span class="pack-note-icon" aria-hidden="true">✦</span>
+            <p><strong id="pack-note-title">Sentence pack</strong><br><span id="pack-note-copy">Short, natural lines with punctuation and rhythm.</span></p>
+          </div>
+          <button class="primary-button" id="start-button" type="button">Start sprint <span aria-hidden="true">→</span></button>
+        </div>
+
+        <div class="game-panel" id="game-panel" hidden>
+          <div class="game-topline">
+            <span class="eyebrow">02 / Find your flow</span>
+            <button class="text-button" id="quit-button" type="button">End round</button>
+          </div>
+
+          <div class="live-stats" aria-label="Live typing stats">
+            <div><span>Time</span><strong id="time-value">30</strong></div>
+            <div><span>Speed</span><strong id="wpm-value">0</strong><small>WPM</small></div>
+            <div><span>Accuracy</span><strong id="accuracy-value">100</strong><small>%</small></div>
+            <div><span>Progress</span><strong id="progress-value">0</strong><small>%</small></div>
+          </div>
+
+          <div class="prompt-wrap">
+            <div class="prompt-label"><span>Type the prompt below</span></div>
+            <div class="typing-prompt" id="typing-prompt" aria-live="polite"></div>
+          </div>
+
+          <label class="sr-only" for="typing-input">Type the prompt</label>
+          <textarea id="typing-input" rows="3" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Start typing here..."></textarea>
+          <div class="game-footer">
+            <span id="round-status">The clock starts with your first key.</span>
+            <button class="secondary-button" id="new-prompt-button" type="button">New prompt</button>
+          </div>
+        </div>
+
+        <div class="result-panel" id="result-panel" hidden>
+          <p class="eyebrow">03 / Sprint complete</p>
+          <h2 id="result-title">Nice run.</h2>
+          <p class="result-summary" id="result-summary"></p>
+          <div class="result-grid">
+            <div><span>Speed</span><strong id="result-wpm">0</strong><small>WPM</small></div>
+            <div><span>Accuracy</span><strong id="result-accuracy">0</strong><small>%</small></div>
+            <div><span>Typed</span><strong id="result-characters">0</strong><small>chars</small></div>
+          </div>
+          <div class="result-actions">
+            <button class="primary-button" id="again-button" type="button">Run it again <span aria-hidden="true">→</span></button>
+            <button class="secondary-button" id="change-settings-button" type="button">Change settings</button>
+          </div>
+        </div>
+      </section>
+
+      <p class="typing-note"><span>Clean by design.</span> Type Sprint uses encouraging, everyday language—no profanity or unsafe prompts.</p>
+      <section class="music-player" aria-label="Background music">
+        <audio id="background-music" src="assets/Big_Waves.wav" loop preload="auto"></audio>
+        <div class="music-player-info"><span class="eyebrow">Now playing</span><span class="music-title">Big Waves</span></div>
+        <button class="music-toggle" id="music-toggle" type="button" aria-label="Pause background musi

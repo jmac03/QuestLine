@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- This is the QuestLine game library page.
      It is the landing screen for the project: it shows the game list,
-     links to the Number Roll game, and contains the reward section and account dialog. -->
+     links to the Number Roll and Type Sprint games, and contains the reward section and account dialog. -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="style.css">
   <link id="favicon" rel="icon" type="image/svg+xml">
 </head>
-<body>
+<body data-music-page="library" data-music-default="big-waves">
   <div class="page-shell">
     <!-- The top bar is shared across pages and keeps the app branding, account area, and navigation consistent. -->
     <header class="site-header">
@@ -38,7 +38,7 @@
             <p class="eyebrow">Your game library</p>
             <h1 id="library-title">Games</h1>
           </div>
-          <p class="library-count">01 game · 02 coming soon</p>
+          <p class="library-count">02 games · 01 coming soon</p>
         </div>
 
         <div class="game-grid">
@@ -51,13 +51,15 @@
             <span class="play-link">Play game <span aria-hidden="true">→</span></span>
           </div>
         </a>
-          <article class="game-card" aria-label="Game slot two">
+          <a class="game-card game-card-link typing-card" href="typing.html" aria-label="Play Type Sprint">
             <div class="game-card-number">02</div>
-            <div class="empty-card-content">
-              <span class="plus-mark" aria-hidden="true">+</span>
-              <p>Game to be added later</p>
+            <div class="featured-game-content">
+              <span class="game-kicker">QuestLine mini-game</span>
+              <h2>Type<br>Sprint</h2>
+              <p>Find your rhythm. Build your streak.</p>
+              <span class="play-link">Play game <span aria-hidden="true">→</span></span>
             </div>
-          </article>
+          </a>
           <article class="game-card" aria-label="Game slot three">
             <div class="game-card-number">03</div>
             <div class="empty-card-content">
@@ -136,6 +138,11 @@
     <div class="account-view" id="account-view" hidden>
       <p class="account-label">Signed in as</p>
       <p class="account-email" id="account-email"></p>
+      <div class="account-music-setting">
+        <label for="default-song-select">Default music</label>
+        <select id="default-song-select"><option value="">Use each page's built-in song</option></select>
+        <small>Page-specific choices override this default.</small>
+      </div>
       <button class="auth-submit sign-out-button" id="sign-out-button" type="button">Sign out</button>
       <p class="auth-message" id="account-message" role="status" aria-live="polite"></p>
     </div>
@@ -143,6 +150,7 @@
   <!-- The page loads the Supabase client, the project client config, the theme module, and the app logic in order. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-client.js"></script>
+  <script src="song-rewards.js"></script>
   <script src="site-ui.js"></script>
   <script src="reward-theme.js"></script>
   <script src="app.js"></script>

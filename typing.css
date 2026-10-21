@@ -1,0 +1,64 @@
+/* This file adds the Type Sprint layout to the shared QuestLine styles. */
+.typing-page { min-height: calc(100vh - 168px); padding: 35px 0 85px; }
+.game-header-note { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .7rem; letter-spacing: .08em; }
+.game-header-note span { color: var(--blue); }
+.typing-heading { display: flex; justify-content: space-between; align-items: end; gap: 30px; margin: 58px 0 38px; }
+.typing-heading h1 { font-size: clamp(3rem, 7vw, 6rem); }
+.typing-heading .eyebrow { margin-bottom: 15px; }
+.game-intro { max-width: 520px; margin: 20px 0 0; color: var(--muted); font-size: .92rem; line-height: 1.6; }
+.personal-best { min-width: 145px; padding-bottom: 5px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .64rem; text-align: right; text-transform: uppercase; }
+.personal-best .eyebrow { margin: 0 0 10px; font-size: .6rem; }
+.personal-best strong { color: var(--ink); font-family: var(--serif); font-size: 3.4rem; font-weight: 400; letter-spacing: -.08em; line-height: .8; }
+.typing-shell { border: 1px solid var(--line); background: #fbfaf6; }
+.settings-panel, .game-panel, .result-panel { min-height: 510px; padding: 35px 42px; }
+.panel-heading, .game-topline, .prompt-label, .game-footer { display: flex; justify-content: space-between; align-items: start; gap: 20px; }
+.panel-heading h2, .result-panel h2 { font-size: clamp(2.1rem, 5vw, 3.7rem); }
+.setup-mark { color: var(--blue); font-family: var(--serif); font-size: 3rem; line-height: 1; }
+.setting-group { margin-top: 35px; }
+.setting-label { display: block; margin-bottom: 10px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .65rem; text-transform: uppercase; }
+.choice-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.choice-button, .secondary-button { padding: 11px 16px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-size: .75rem; }
+.choice-button:hover, .choice-button.is-selected { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+.pack-note { display: flex; align-items: start; gap: 13px; margin: 35px 0 28px; padding: 15px 17px; background: var(--cream); }
+.pack-note-icon { color: var(--blue); font-size: 1.1rem; }
+.pack-note p { margin: 0; color: var(--muted); font-size: .77rem; line-height: 1.5; }
+.pack-note strong { color: var(--ink); font-weight: 500; }
+.primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 13px; min-height: 49px; padding: 0 24px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); font-size: .8rem; }
+.primary-button:hover { background: var(--blue); color: var(--ink); }
+.text-button { border: 0; background: transparent; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .65rem; text-transform: uppercase; }
+.text-button:hover { color: var(--ink); }
+.live-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 30px 0 24px; }
+.live-stats > div, .result-grid > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 7px; padding: 15px 17px; border: 1px solid var(--line); }
+.live-stats span, .result-grid span { width: 100%; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .6rem; text-transform: uppercase; }
+.live-stats strong, .result-grid strong { font-family: var(--serif); font-size: 2rem; font-weight: 400; letter-spacing: -.06em; }
+.live-stats small, .result-grid small { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .58rem; text-transform: uppercase; }
+.prompt-wrap { padding: 28px 0 25px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.prompt-label { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .62rem; text-transform: uppercase; }
+.typing-prompt { min-height: 110px; margin-top: 20px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: clamp(1.15rem, 2.3vw, 1.65rem); line-height: 1.7; }
+.typing-prompt .correct { color: var(--ink); }
+.typing-prompt .incorrect { color: #a42d24; text-decoration: underline; text-decoration-thickness: 2px; }
+.typing-prompt .current { border-left: 2px solid var(--blue); }
+#typing-input { width: 100%; margin-top: 20px; padding: 17px; resize: vertical; border: 1px solid var(--line); border-radius: 0; outline: none; background: var(--paper); color: var(--ink); font: 1rem 'DM Mono', monospace; line-height: 1.5; }
+#typing-input:focus { border-color: var(--ink); box-shadow: 4px 4px 0 var(--lime); }
+.game-footer { align-items: center; margin-top: 17px; color: var(--muted); font-size: .72rem; }
+.game-footer .secondary-button { padding: 8px 12px; font-family: 'DM Mono', monospace; font-size: .6rem; text-transform: uppercase; }
+.result-panel { display: flex; max-width: 640px; margin: auto; flex-direction: column; justify-content: center; }
+.result-panel .eyebrow { margin-bottom: 15px; }
+.result-summary { margin: 18px 0 26px; color: var(--muted); line-height: 1.6; }
+.result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.result-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 28px; }
+.typing-note { margin: 18px 0 0; color: var(--muted); font-size: .72rem; }
+.typing-note span { color: var(--ink); font-weight: 600; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+@media (max-width: 760px) {
+  .typing-page { padding: 25px 0 60px; }
+  .game-header-note { display: none; }
+  .typing-heading { align-items: start; flex-direction: column; margin: 45px 0 27px; }
+  .personal-best { text-align: left; }
+  .settings-panel, .game-panel, .result-panel { min-height: 530px; padding: 25px 19px; }
+  .live-stats { grid-template-columns: repeat(2, 1fr); }
+  .result-grid { grid-template-columns: 1fr; }
+  .game-footer { align-items: start; flex-direction: column; }
+  .typing-prompt { min-height: 145px; }
+}

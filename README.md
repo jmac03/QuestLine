@@ -1,6 +1,6 @@
 # QuestLine
 
-QuestLine is a front-end layout for a personal game library. It includes Number Roll, a Supabase-backed energy and score game, plus two reserved game slots.
+QuestLine is a front-end layout for a personal game library. It includes Number Roll, a Supabase-backed energy and score game, plus Type Sprint, a local speed-typing game with clean prompt packs.
 
 ## Quick reading guide
 
@@ -13,7 +13,9 @@ This project is easiest to understand by reading it in this order:
 5. `app.js` loads reward data and handles sign-in / sign-out.
 6. `reward-theme.js` validates and applies earned color themes.
 7. `number-roll.html`, `number-roll.css`, and `number-roll.js` build the actual game screen.
-8. `assets/` contains the trimmed background music tracks.
+8. `typing.html`, `typing.css`, and `typing.js` build the second game: settings, timed gameplay, sentence/word prompts, and local personal-best tracking.
+9. `assets/` contains the trimmed background music tracks.
+10. `song-rewards.js` contains the local song catalog and filters it using the signed-in user's reward grants.
 
 ## Run the app
 
@@ -30,6 +32,16 @@ Serve the project over HTTP using the **Live Server** extension in VS Code or an
 The game invokes the existing `get_roll_state` and `roll_number` Postgres RPC functions as the authenticated user. Both functions must be available to the `authenticated` role; the roll function must validate energy and award score server-side. The page does not calculate or persist scores in the browser.
 
 The library's Rewards section loads active reward tracks, the signed-in user's selection and point progress, track milestones, and granted rewards. Select a track with **Choose this track**; the page saves the choice through the `select_reward_track` RPC. These reward tables and the RPC must be available to the authenticated user in Supabase.
+
+Song rewards are currently stored in the app's local catalog in `song-rewards.js`. Grant creation remains server-controlled: write a payload such as `{"type":"song","song_id":"big-waves"}` into the existing `user_reward_grants.reward_payload` column. The future picker can call `window.questLineSongs.listOwned()`, which reads the signed-in user's grants and returns only catalog songs referenced by those grants. No song table or migration is required yet.
+
+The migration `supabase/migrations/20261019000001_song_reward_grants.sql` adds the server-only `grant_song_reward` helper for creating that payload without storing song metadata in Supabase.
+
+If `20261019000001_song_reward_grants.sql` has already been applied, also apply `supabase/migrations/20261019000002_fix_song_reward_milestone.sql`; it updates the helper to populate the required `user_reward_grants.milestone_id` column.
+
+The `supabase/functions/claim-reward/index.ts` edge function is deployed in Supabase as `claim-song-reward`. The Rewards UI displays **Claim song** for a reached song milestone on the selected track and calls `claim-song-reward` with only `{ "milestone_id": "..." }`. The function authenticates the caller, derives the user from the JWT, verifies the selected track and point threshold, reads the song ID from the milestone's server-side payload, prevents an already-granted song from being claimed again, and calls the restricted database function with the service role. It never trusts a client-provided user ID or song ID.
+
+To add a local song, place its audio file under `assets/` and add a matching entry to `localSongCatalog` in `song-rewards.js`. Then create a reward milestone whose `reward_payload` is `{"type":"song","song_id":"your-song-id"}`. After the user reaches the milestone, selects that track, and clicks **Claim song**, the edge function creates the grant. The future song picker can call `window.questLineSongs.listOwned()` to receive only songs referenced by the user's grants.
 
 An earned color-scheme grant can be equipped from its reward-history card. The equipped grant ID is saved in browser `localStorage`, scoped to the signed-in user's ID. On each page load, color values are read only from that authenticated user's `user_reward_grants` rows and validated before applying them as CSS custom-property overrides; a cached ID is used only if it matches a verified grant. The stylesheet's `:root` values remain the defaults. The grants table must only allow users to read their own rows; grant creation and modification should remain server-controlled. If the grant cannot be verified, the app reverts to the defaults. This browser-side preference is cosmetic and must not be used as proof of reward ownership by server-side features.
 
