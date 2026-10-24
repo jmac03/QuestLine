@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuestLine | Rewards</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link id="favicon" rel="icon" type="image/svg+xml">
+</head>
+<body data-music-page="rewards" data-music-default="big-waves" data-requires-auth="true">
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="QuestLine home"><span>Quest</span><span class="brand-line">Line</span></a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="index.html">Games</a>
+        <a class="active" href="rewards.html">Rewards</a>
+      </nav>
+      <a class="profile-button" id="profile-button" href="profile.html" aria-label="Open your profile"><span class="profile-avatar" id="profile-avatar">?</span><span class="profile-name" id="profile-name">Profile</span></a>
+    </header>
+    <main>
+      <section class="rewards-strip" aria-labelledby="rewards-title">
+        <div><p class="eyebrow">Choose your path</p><h1 id="rewards-title">Rewards</h1></div>
+        <p>Choose a reward track and build points as you play. Each milestone brings you closer to your next reward.</p>
+        <div class="reward-score"><strong id="reward-points">—</strong><span>points earned</span></div>
+      </section>
+      <section class="reward-details" aria-label="Reward track details">
+        <p class="reward-status" id="reward-status" role="status" aria-live="polite">Sign in to view your reward tracks.</p>
+        <button class="auth-submit reward-auth-button" id="rewards-auth-button" type="button" hidden>Sign in or sign up</button>
+        <button class="default-theme-button" id="default-theme-button" type="button" hidden>Use default colors</button>
+        <div class="reward-track-grid" id="reward-track-grid"></div>
+        <section class="granted-rewards" id="granted-rewards" aria-labelledby="granted-rewards-title" hidden>
+          <div class="reward-subheading"><p class="eyebrow">What you have earned</p><h2 id="granted-rewards-title">Reward history</h2></div>
+          <ul class="grant-list" id="grant-list"></ul>
+        </section>
+      </section>
+      <section class="music-player" aria-label="Background music">
+        <audio id="background-music" src="assets/Big_Waves.wav" loop preload="auto"></audio>
+        <div class="music-player-info"><span class="eyebrow">Now playing</span><span class="music-title">Big Waves</span></div>
+        <button class="music-toggle" id="music-toggle" type="button" aria-label="Play background music" aria-pressed="false"><span aria-hidden="true">▶</span></button>
+        <label class="volume-control" for="music-volume"><span aria-hidden="true">Volume</span><input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.35"><output id="music-volume-value" for="music-volume">35%</output></label>
+      </section>
+    </main>
+    <footer class="site-footer"><span>QuestLine © 2026</span><span>More games are on the way.</span></footer>
+  </div>
+  <dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-title">
+    <div class="auth-dialog-header"><div><p class="eyebrow">Your QuestLine account</p><h2 id="auth-title">Welcome back</h2></div><button class="dialog-close" id="dialog-close" type="button" aria-label="Close account dialog">×</button></div>
+    <div id="auth-form-view"><div class="auth-tabs" role="group" aria-label="Account action"><button class="auth-tab active" id="sign-in-tab" type="button" aria-pressed="true">Sign in</button><button class="auth-tab" id="sign-up-tab" type="button" aria-pressed="false">Create account</button></div><form id="auth-form"><label for="auth-email">Email</label><input id="auth-email" name="email" type="email" autocomplete="email" required><label for="auth-password">Password</label><input id="auth-password" name="password" type="password" autocomplete="current-password" required><button class="auth-submit" id="auth-submit" type="submit">Sign in</button></form><p class="auth-message" id="auth-message" role="status" aria-live="polite"></p></div>
+    <div class="account-view" id="account-view" hidden><p class="account-label">Signed in as</p><p class="account-email" id="account-email"></p><button class="auth-submit" id="profile-settings-link" type="button">Open profile settings</button><button class="auth-submit sign-out-button" id="sign-out-button" type="button">Sign out</button><p class="auth-message" id="account-message" role="status" aria-live="polite"></p></div>
+  </dialog>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-client.js"></script><script src="song-rewards.js"></script><script src="site-ui.js"></script><script src="reward-theme.js"></script><script src="app.js"></script>
+</body>
+</html>

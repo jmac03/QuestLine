@@ -23,25 +23,24 @@ Serve the project over HTTP using the **Live Server** extension in VS Code or an
 
 ## Login and Supabase setup
 
-1. In the Supabase dashboard for project `obbxdederwlzeoudajhi`, enable **Authentication → Providers → Email**.
-2. Set **Authentication → URL Configuration → Site URL** to the deployed app's base URL.
+1. In the Supabase dashboard for project `obbxdederwlzeoudajhi`, enable **Authentication Ã¢â€ â€™ Providers Ã¢â€ â€™ Email**.
+2. Set **Authentication Ã¢â€ â€™ URL Configuration Ã¢â€ â€™ Site URL** to the deployed app's base URL.
 3. Add the app URLs to **Redirect URLs**: at minimum the hosted `index.html` and `number-roll.html` URLs. For local testing, allow the matching Live Server origin and paths (for example `http://127.0.0.1:5500/**`).
-4. Use the profile control on the library page to create an account or sign in. If email confirmations are enabled, new users must follow the confirmation link before their account has a session.
+4. Use the profile control on the library page to create an account or sign in. After account creation, the form switches back to Sign in so the new account can be used immediately.
 5. Once signed in, select **Number Roll**. Its separate page restores the same-origin Supabase session and gates game access on a signed-in user.
 
 The game invokes the existing `get_roll_state` and `roll_number` Postgres RPC functions as the authenticated user. Both functions must be available to the `authenticated` role; the roll function must validate energy and award score server-side. The page does not calculate or persist scores in the browser.
 
-The library's Rewards section loads active reward tracks, the signed-in user's selection and point progress, track milestones, and granted rewards. Select a track with **Choose this track**; the page saves the choice through the `select_reward_track` RPC. These reward tables and the RPC must be available to the authenticated user in Supabase.
+The dedicated Rewards page loads active reward tracks, the signed-in user's selection and point progress, track milestones, and granted rewards. Select a track with **Choose this track**; the page saves the choice through the `select_reward_track` RPC. These reward tables and the RPC must be available to the authenticated user in Supabase.
 
-Song rewards are currently stored in the app's local catalog in `song-rewards.js`. Grant creation remains server-controlled: write a payload such as `{"type":"song","song_id":"fire-behind-the-weave"}` into the existing `user_reward_grants.reward_payload` column. The music picker combines the built-in songs with songs returned by `window.questLineSongs.listOwned()`. Music preferences are stored in browser `localStorage` per signed-in user; a page override wins over the profile default, which wins over that page's built-in song. No song table or migration is required.
+Song rewards are currently stored in the app's local catalog in `song-rewards.js`. Grant creation remains server-controlled: write a payload such as `{"type":"song","song_id":"fire-behind-the-weave"}` into the existing `user_reward_grants.reward_payload` column. The music picker combines the built-in songs with songs returned by `window.questLineSongs.listOwned()`, and filters every reward song against the shared catalog. Music preferences are stored only in browser `localStorage`, scoped per signed-in user (or the guest device), with a page override winning over the profile default, which wins over that page's built-in song.
 
-The migration `supabase/migrations/20261019000001_song_reward_grants.sql` adds the server-only `grant_song_reward` helper for creating that payload without storing song metadata in Supabase.
+The migration `supabase/migrations/20261019000001_song_reward_grants.sql` adds the server-only `grant_song_reward` helper for creating that payload without storing song metadata in Supabase. Apply `supabase/migrations/20261023000001_secure_account_rows.sql` to enable row-level security for account-owned reward, progress, and track-selection rows; client writes remain blocked while server-side RPCs and service-role jobs retain control.
 
-If `20261019000001_song_reward_grants.sql` has already been applied, also apply `supabase/migrations/20261019000002_fix_song_reward_milestone.sql`; it updates the helper to populate the required `user_reward_grants.milestone_id` column.
 
 The `supabase/functions/claim-reward/index.ts` edge function is deployed in Supabase as `claim-song-reward`. The Rewards UI displays **Claim song** for a reached song milestone on the selected track and calls `claim-song-reward` with only `{ "milestone_id": "..." }`. The function authenticates the caller, derives the user from the JWT, verifies the selected track and point threshold, reads the song ID from the milestone's server-side payload, prevents an already-granted song from being claimed again, and calls the restricted database function with the service role. It never trusts a client-provided user ID or song ID.
 
-To add a local song, place its audio file under `assets/` and add a matching entry to `localSongCatalog` in `song-rewards.js`. Then create a reward milestone whose `reward_payload` is `{"type":"song","song_id":"your-song-id"}`. After the user reaches the milestone, selects that track, and clicks **Claim song**, the edge function creates the grant. The future song picker can call `window.questLineSongs.listOwned()` to receive only songs referenced by the user's grants.
+To add a local song, place its audio file under `assets/` and add a matching entry to `localSongCatalog` in `song-rewards.js`. Then create a reward milestone whose `reward_payload` is `{"type":"song","song_id":"your-song-id"}`. For example, the Veyrith reward uses `veyriths-transformation`. After the user reaches the milestone, selects that track, and clicks **Claim song**, the edge function creates the grant. The future song picker can call `window.questLineSongs.listOwned()` to receive only songs referenced by the user's grants.
 
 An earned color-scheme grant can be equipped from its reward-history card. The equipped grant ID is saved in browser `localStorage`, scoped to the signed-in user's ID. On each page load, color values are read only from that authenticated user's `user_reward_grants` rows and validated before applying them as CSS custom-property overrides; a cached ID is used only if it matches a verified grant. The stylesheet's `:root` values remain the defaults. The grants table must only allow users to read their own rows; grant creation and modification should remain server-controlled. If the grant cannot be verified, the app reverts to the defaults. This browser-side preference is cosmetic and must not be used as proof of reward ownership by server-side features.
 
@@ -57,7 +56,7 @@ HTML is the language used to describe what appears on a web page. Tags such as `
 
 - The `<header>` contains the QuestLine wordmark, navigation links, and the account control.
 - The library `<section>` is the main page. It links to Number Roll and has two reserved game slots.
-- The rewards sections display available reward tracks, point progress, milestones, and granted rewards without changing the library layout.
+- `rewards.html` displays available reward tracks, point progress, milestones, and granted rewards; the library page links there instead of duplicating the full dashboard.
 
 ### `style.css`: the visual design
 

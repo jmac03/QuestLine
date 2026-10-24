@@ -3,9 +3,13 @@
 // loads reward data from Supabase, handles sign-in / sign-out,
 // and lets a signed-in user pick an active reward track or equip a color theme.
 
-const nextPage = new URLSearchParams(window.location.search).get('next') === 'number-roll.html'
-  ? 'number-roll.html'
+const queryParams = new URLSearchParams(window.location.search);
+const requestedNextPage = queryParams.get('next');
+const nextPage = ['number-roll.html', 'profile.html'].includes(requestedNextPage)
+  ? requestedNextPage
   : null;
+const signUpRequested = queryParams.get('mode') === 'signup';
+const requiresAuthentication = document.body.dataset.requiresAuth === 'true';
 let isNavigatingToGame = false;
 
 function continueToRequestedPage() {
@@ -38,10 +42,24 @@ const rewardTrackGrid = document.querySelector('#reward-track-grid');
 const grantedRewards = document.querySelector('#granted-rewards');
 const grantList = document.querySelector('#grant-list');
 const defaultThemeButton = document.querySelector('#default-theme-button');
+const rewardsAuthButton = document.querySelector('#rewards-auth-button');
 let isSigningUp = false;
 let activeUser = null;
 let rewardRequestId = 0;
+let rewardLoadFailures = 0;
 let equippedColorThemeGrantId = null;
+
+function promptForSignIn(message = 'Sign in to continue.') {
+  if (!authDialog || activeUser) return;
+  setAuthMode(false);
+  setAuthMessage(message);
+  if (!authDialog.open) authDialog.showModal();
+  authEmail?.focus();
+}
+
+function setRewardsAuthButtonVisible(visible) {
+  if (rewardsAuthButton) rewardsAuthButton.hidden = !visible;
+}
 
 function renderDefaultSongSelect(songs = window.questLineMusic?.getAvailableSongs?.() || []) {
   if (!defaultSongSelect) return;
@@ -54,6 +72,7 @@ function renderDefaultSongSelect(songs = window.questLineMusic?.getAvailableSong
 const supabaseClient = window.questLineSupabase;
 
 function setRewardStatus(message, isError = false) {
+  if (!rewardStatus) return;
   rewardStatus.textContent = message;
   rewardStatus.classList.toggle('is-error', isError);
 }
@@ -289,8 +308,10 @@ async function useDefaultTheme() {
 // It fetches the reward track catalog, the user's selected track, their point totals,
 // the milestone list, and all earned grant records, then renders the UI.
 async function loadRewardData(user) {
+  if (!rewardStatus) return;
   const requestId = ++rewardRequestId;
   if (!user) {
+    setRewardsAuthButtonVisible(true);
     equippedColorThemeGrantId = null;
     window.questLineRewardTheme?.setOwnedGrants(null, []);
     defaultThemeButton.hidden = true;
@@ -299,9 +320,11 @@ async function loadRewardData(user) {
     grantList.replaceChildren();
     grantedRewards.hidden = true;
     setRewardStatus('Sign in to view and choose a reward track.');
+    if (requiresAuthentication) promptForSignIn('Sign in to view your rewards.');
     return;
   }
   if (!supabaseClient) {
+    setRewardsAuthButtonVisible(true);
     equippedColorThemeGrantId = null;
     window.questLineRewardTheme?.setOwnedGrants(null, []);
     defaultThemeButton.hidden = true;
@@ -346,6 +369,8 @@ async function loadRewardData(user) {
     }
     if (requestId !== rewardRequestId || activeUser?.id !== authenticatedUser.id) return;
 
+    rewardLoadFailures = 0;
+    setRewardsAuthButtonVisible(false);
     equippedColorThemeGrantId = window.questLineRewardTheme?.setOwnedGrants(authenticatedUser, grantsResult.data || []) || null;
     updateProfile(authenticatedUser);
     defaultThemeButton.hidden = !equippedColorThemeGrantId;
@@ -363,6 +388,11 @@ async function loadRewardData(user) {
     defaultThemeButton.hidden = true;
     const message = error instanceof Error ? error.message : 'Unknown error';
     setRewardStatus(`Could not load your reward tracks: ${message}`, true);
+    rewardLoadFailures += 1;
+    if (requiresAuthentication && (!activeUser || rewardLoadFailures >= 2 || /auth|sign in|session|token/i.test(message))) {
+      setRewardsAuthButtonVisible(true);
+      promptForSignIn('Sign in again to load your rewards.');
+    }
   }
 }
 
@@ -402,8 +432,8 @@ function updateProfile(user) {
 
   if (!user) {
     profileAvatar.textContent = '?';
-    profileName.textContent = 'Sign in';
-    profileButton.setAttribute('aria-label', 'Sign in to your account');
+    profileName.textContent = 'Profile';
+    profileButton.setAttribute('aria-label', 'Open your profile');
     return;
   }
 
@@ -417,8 +447,8 @@ function updateProfile(user) {
     .join('');
 
   profileAvatar.textContent = initials || '?';
-  profileName.textContent = email;
-  profileButton.setAttribute('aria-label', `Manage account for ${email}`);
+  profileName.textContent = 'Profile';
+  profileButton.setAttribute('aria-label', 'Open your profile');
 }
 
 function setAuthMode(signUp) {
@@ -442,6 +472,8 @@ function showAccount(user) {
   setAccountMessage('');
 }
 
+profileButton?.addEventListener('click', () => window.location.assign('profile.html'));
+
 window.addEventListener('questline:music-ready', (event) => {
   renderDefaultSongSelect(event.detail?.songs || []);
 });
@@ -454,19 +486,17 @@ defaultSongSelect?.addEventListener('change', async () => {
   }
 });
 
-// The account dialog is the entry point for sign-in, sign-up, and sign-out.
-// This section wires the user actions to the same Supabase auth flow used across the app.
-profileButton.addEventListener('click', () => {
-  if (activeUser) {
-    showAccount(activeUser);
-  } else {
-    showAccount(null);
-  }
-  authDialog.showModal();
-  if (!activeUser) authEmail.focus();
+document.querySelector('#profile-settings-link')?.addEventListener('click', () => {
+  window.location.assign('profile.html');
 });
 
-defaultThemeButton.addEventListener('click', useDefaultTheme);
+defaultThemeButton?.addEventListener('click', useDefaultTheme);
+rewardsAuthButton?.addEventListener('click', () => {
+  setAuthMode(false);
+  setAuthMessage('');
+  authDialog.showModal();
+  authEmail.focus();
+});
 document.querySelector('#dialog-close').addEventListener('click', () => authDialog.close());
 signInTab.addEventListener('click', () => setAuthMode(false));
 signUpTab.addEventListener('click', () => setAuthMode(true));
@@ -504,7 +534,9 @@ authForm.addEventListener('submit', async (event) => {
     }
 
     if (signingUp && !data.session) {
-      setAuthMessage('Check your email for a confirmation link to finish creating your account.');
+      authPassword.value = '';
+      setAuthMode(false);
+      setAuthMessage('Account created. Sign in to continue.');
       return;
     }
 
@@ -545,7 +577,7 @@ signOutButton.addEventListener('click', async () => {
 if (supabaseClient) {
   supabaseClient.auth.onAuthStateChange((_event, session) => {
     updateProfile(session?.user || null);
-    loadRewardData(session?.user || null);
+    if (rewardStatus) loadRewardData(session?.user || null);
     if (authDialog.open) showAccount(session?.user || null);
     if (session) continueToRequestedPage();
   });
@@ -556,14 +588,14 @@ if (supabaseClient) {
       return;
     }
     updateProfile(data.session?.user || null);
-    loadRewardData(data.session?.user || null);
+    if (rewardStatus) loadRewardData(data.session?.user || null);
     if (data.session) continueToRequestedPage();
   }).catch((error) => {
     setAuthMessage(error instanceof Error ? error.message : 'Could not restore your account session.', true);
   });
 
-  if (new URLSearchParams(window.location.search).get('auth') === 'required') {
-    setAuthMode(false);
+  if (queryParams.get('auth') === 'required') {
+    setAuthMode(signUpRequested);
     authDialog.showModal();
     authEmail.focus();
   }

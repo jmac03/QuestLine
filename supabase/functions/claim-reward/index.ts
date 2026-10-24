@@ -68,7 +68,9 @@ Deno.serve(async (request) => {
     && payload.type === 'song' && typeof payload.song_id === 'string'
     ? payload.song_id.trim()
     : '';
-  if (!songId) return response({ error: 'This milestone is not a valid song reward.' }, 400);
+  if (!songId || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(songId)) {
+    return response({ error: 'This milestone is not a valid song reward.' }, 400);
+  }
 
   const [{ data: selection, error: selectionError }, { data: progress, error: progressError }, { data: grants, error: grantsError }] = await Promise.all([
     adminClient
@@ -99,7 +101,6 @@ Deno.serve(async (request) => {
   }
 
   const alreadyGranted = (grants || []).some((grant) => {
-    const grantPayload = grant.reward_payload;
     return grant.milestone_id === milestone.id;
   });
   if (alreadyGranted) return response({ error: 'This song reward was already granted.' }, 409);

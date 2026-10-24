@@ -14,23 +14,27 @@ function updateFavicon() {
   favicon.href = `data:image/svg+xml,${encodeURIComponent(faviconSvg)}`;
 }
 
-const musicPreferencePrefix = 'questline.music-preferences.';
 const musicPage = document.body.dataset.musicPage || 'library';
 const musicBuiltInDefault = document.body.dataset.musicDefault || 'big-waves';
 
-function readMusicPreferences(userId) {
-  const storageId = userId || 'guest';
-  try {
-    const value = JSON.parse(localStorage.getItem(`${musicPreferencePrefix}${storageId}`) || '{}');
-    return { defaultSongId: value.defaultSongId || null, pages: value.pages || {} };
-  } catch {
-    return { defaultSongId: null, pages: {} };
+function updateProfileNavigation(user) {
+  const avatar = document.querySelector('#profile-avatar');
+  const name = document.querySelector('#profile-name');
+  if (!avatar || !name) return;
+  if (!user) {
+    avatar.textContent = '?';
+    name.textContent = 'Profile';
+    return;
   }
-}
-
-function writeMusicPreferences(userId, preferences) {
-  const storageId = userId || 'guest';
-  localStorage.setItem(`${musicPreferencePrefix}${storageId}`, JSON.stringify(preferences));
+  const email = user.email || '';
+  const initials = email.split('@')[0]
+    .split(/[._-]/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join('');
+  avatar.textContent = initials || '?';
+  name.textContent = 'Profile';
 }
 
 function setupMusicPlayer() {
@@ -67,7 +71,7 @@ function setupMusicPlayer() {
   function renderSongs() {
     songSelect.replaceChildren(new Option('Use profile default', ''));
     for (const song of availableSongs) songSelect.append(new Option(song.title, song.id));
-    songSelect.value = readMusicPreferences(currentUser?.id).pages[musicPage] || '';
+    songSelect.value = window.questLineSongs?.getPreferences?.().pages[musicPage] || '';
   }
 
   function playCurrentSong(song) {
@@ -82,21 +86,19 @@ function setupMusicPlayer() {
     if (wasPlaying) playMusic();
   }
 
-  function resolveSong(preferences) {
-    return availableSongs.find((song) => song.id === preferences.pages[musicPage])
-      || availableSongs.find((song) => song.id === preferences.defaultSongId)
-      || availableSongs.find((song) => song.id === musicBuiltInDefault)
-      || availableSongs[0];
+  function resolveSong() {
+    return window.questLineSongs?.resolveSong?.(availableSongs, musicPage, musicBuiltInDefault) || availableSongs[0];
   }
 
   async function loadSongs(user) {
     const request = ++songLoadRequest;
     currentUser = user;
+    await window.questLineSongs?.loadPreferences?.(user);
     const songs = await (window.questLineSongs?.listAvailable?.() || []);
     if (request !== songLoadRequest) return;
     availableSongs = songs;
     renderSongs();
-    playCurrentSong(resolveSong(readMusicPreferences(user?.id)));
+    playCurrentSong(resolveSong());
     musicReady = true;
     window.dispatchEvent(new CustomEvent('questline:music-ready', { detail: { songs: availableSongs, user } }));
     playMusic();
@@ -131,16 +133,14 @@ function setupMusicPlayer() {
   });
 
   songSelect.addEventListener('change', () => {
-    const preferences = readMusicPreferences(currentUser?.id);
     const chosenSong = availableSongs.find((song) => song.id === songSelect.value);
     if (!currentUser && chosenSong && !chosenSong.is_default) {
       songSelect.value = '';
       return;
     }
-    if (songSelect.value) preferences.pages[musicPage] = songSelect.value;
-    else delete preferences.pages[musicPage];
-    writeMusicPreferences(currentUser?.id, preferences);
-    playCurrentSong(resolveSong(preferences));
+    window.questLineSongs.setPageSong(musicPage, chosenSong?.id || null)
+      .then(() => playCurrentSong(resolveSong()))
+      .catch((error) => console.error('Could not save page music preference.', error));
   });
 
   ['pointerdown', 'keydown'].forEach((eventName) => {
@@ -153,28 +153,35 @@ function setupMusicPlayer() {
   updateControls(false);
   if (window.questLineSupabase) {
     window.questLineSupabase.auth.onAuthStateChange((_event, session) => {
+      updateProfileNavigation(session?.user || null);
       loadSongs(session?.user || null).catch((error) => console.error('Could not load background music.', error));
     });
     window.questLineSupabase.auth.getSession()
       .then(({ data, error }) => {
         if (error) throw error;
+        updateProfileNavigation(data.session?.user || null);
         return loadSongs(data.session?.user || null);
       })
       .catch((error) => console.error('Could not load background music preferences.', error));
   } else {
+    updateProfileNavigation(null);
     loadSongs(null).catch((error) => console.error('Could not load background music.', error));
   }
 
   window.questLineMusic = {
     getAvailableSongs: () => [...availableSongs],
-    getPreferences: () => readMusicPreferences(currentUser?.id),
+    getPreferences: () => window.questLineSongs?.getPreferences?.() || { defaultSongId: null, pages: {} },
     async setDefaultSong(songId) {
       if (!currentUser) throw new Error('Sign in to update your music preference.');
       if (songId && !availableSongs.some((song) => song.id === songId)) throw new Error('That song is not available to you.');
-      const preferences = readMusicPreferences(currentUser.id);
-      preferences.defaultSongId = songId || null;
-      writeMusicPreferences(currentUser.id, preferences);
-      playCurrentSong(resolveSong(preferences));
+      await window.questLineSongs.setDefaultSong(songId || null);
+      playCurrentSong(resolveSong());
+    },
+    async resetPageSongs() {
+      if (!currentUser) throw new Error('Sign in to reset your music preferences.');
+      await window.questLineSongs.resetAllPreferences();
+      songSelect.value = '';
+      playCurrentSong(resolveSong());
     },
   };
 }

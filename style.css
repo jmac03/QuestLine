@@ -45,8 +45,9 @@ button { cursor: pointer; font: inherit; }
 h1, h2, p { margin-top: 0; }
 h1, h2 { margin-bottom: 0; font-size: clamp(3rem, 7vw, 6.5rem); font-weight: 500; letter-spacing: -.09em; line-height: .86; }
 .library-count { margin: 0; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .7rem; text-transform: uppercase; }
-.game-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.game-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: stretch; }
 .game-card { position: relative; min-height: 400px; border: 1px solid var(--line); background: var(--cream); transition: transform .25s, box-shadow .25s; }
+.game-card-upcoming { display: grid; }
 .game-card:hover { transform: translateY(-7px); box-shadow: 7px 7px 0 var(--lime); }
 .game-card-link { display: block; color: var(--ink); }
 .featured-game-content { position: absolute; top: 50%; left: 50%; width: calc(100% - 56px); transform: translate(-50%, -50%); }
@@ -61,6 +62,8 @@ h1, h2 { margin-bottom: 0; font-size: clamp(3rem, 7vw, 6.5rem); font-weight: 500
 .empty-card-content p { width: max-content; margin: 0; font-family: 'DM Mono', monospace; font-size: .65rem; text-transform: uppercase; }
 /* The rewards area summarizes points and keeps the milestone/progression cards visually separated from the game list. */
 .rewards-strip { display: grid; grid-template-columns: 1.1fr 1fr .65fr; gap: 40px; align-items: end; padding: 65px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.rewards-strip-link { color: inherit; transition: background .2s ease; }
+.rewards-strip-link:hover { background: var(--cream); }
 .rewards-strip h2 { font-size: clamp(2.5rem, 5vw, 4.5rem); }
 .rewards-strip > p { max-width: 300px; margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.6; }
 .reward-score { justify-self: end; text-align: right; }
@@ -141,8 +144,18 @@ h1, h2 { margin-bottom: 0; font-size: clamp(3rem, 7vw, 6.5rem); font-weight: 500
 .account-music-setting { display: grid; gap: 8px; margin: 20px 0; padding: 15px; border: 1px solid var(--line); background: var(--cream); }
 .account-music-setting label { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .68rem; text-transform: uppercase; }
 .account-music-setting small { color: var(--muted); font-size: .72rem; line-height: 1.4; }
+.profile-page { max-width: 560px; padding: 90px 0 70px; }
+.profile-page h1 { margin: 0 0 38px; font-size: clamp(3rem, 8vw, 5.5rem); letter-spacing: -.08em; }
+.profile-page form, .profile-page [id="profile-account"] { display: grid; gap: 12px; max-width: 400px; }
+.profile-page label { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .68rem; text-transform: uppercase; }
+.profile-page input { padding: 12px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; }
+.profile-page .auth-submit { margin-top: 10px; }
+.profile-page .account-music-setting { margin: 8px 0; }
+.profile-loading { min-height: 1.2em; color: var(--muted); font-size: .8rem; }
 .account-label { margin: 0; }
 .sign-out-button { margin-top: 0; }
+[aria-disabled="true"], button:disabled, select:disabled { cursor: wait; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
 [hidden] { display: none !important; }
 /* Responsive behavior collapses the three-column layout into stacked sections so the page stays usable on phones. */
 @media (max-width: 760px) {
