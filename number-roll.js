@@ -20,7 +20,7 @@ const historyList = document.querySelector('#history-list');
 const gameError = document.querySelector('#game-error');
 const themeStatus = document.querySelector('#theme-status');
 
-let currentUser = null;
+let rollUser = null;
 let currentState = null;
 let requestInProgress = false;
 let stateRequestInProgress = false;
@@ -178,7 +178,7 @@ function renderState(state) {
 }
 
 async function loadRollState() {
-  if (!currentUser || !supabaseClient || requestInProgress || stateRequestInProgress) return;
+  if (!rollUser || !supabaseClient || requestInProgress || stateRequestInProgress) return;
 
   stateRequestInProgress = true;
   rollButton.disabled = true;
@@ -203,7 +203,7 @@ async function loadRollState() {
 }
 
 function showLogin() {
-  currentUser = null;
+  rollUser = null;
   loginRequired.hidden = false;
   rollGame.hidden = true;
   showGameError('');
@@ -221,9 +221,9 @@ async function showPlayer(user) {
   playerEmail.textContent = user.email || 'QuestLine player';
   playerAvatar.textContent = (user.email || 'Q').slice(0, 1).toUpperCase();
 
-  const isNewUser = currentUser?.id !== user.id;
+  const isNewUser = rollUser?.id !== user.id;
   if (isNewUser) {
-    currentUser = user;
+    rollUser = user;
     currentState = null;
   }
   await Promise.all([
@@ -233,7 +233,7 @@ async function showPlayer(user) {
 }
 
 rollButton.addEventListener('click', async () => {
-  if (!currentUser || requestInProgress) return;
+  if (!rollUser || requestInProgress) return;
   if (!currentState) {
     await loadRollState();
     return;
@@ -309,8 +309,8 @@ if (!supabaseClient) {
   supabaseClient.auth.onAuthStateChange((_event, session) => {
     const user = session?.user || null;
     const nextUserId = user?.id || null;
-    if (user && currentUser?.id === user.id) void loadRewardTheme(user);
-    if (activeUserId === nextUserId && (nextUserId || !currentUser)) return;
+    if (user && rollUser?.id === user.id) void loadRewardTheme(user);
+    if (activeUserId === nextUserId && (nextUserId || !rollUser)) return;
     activeUserId = nextUserId;
     void showPlayer(user);
   });
@@ -330,10 +330,10 @@ if (!supabaseClient) {
   });
 
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && currentUser) void loadRollState();
+    if (!document.hidden && rollUser) void loadRollState();
   });
 
   window.addEventListener('pageshow', (event) => {
-    if (event.persisted && currentUser) void loadRollState();
+    if (event.persisted && rollUser) void loadRollState();
   });
 }

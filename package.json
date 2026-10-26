@@ -1,0 +1,12 @@
+{
+  "name": "questline-tests",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:edge": "node --test tests/backend/edge-function-contract.test.mjs",
+    "test:all": "npm run test:edge && npm test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
+  }
+}

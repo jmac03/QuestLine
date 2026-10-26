@@ -21,6 +21,54 @@ This project is easiest to understand by reading it in this order:
 
 Serve the project over HTTP using the **Live Server** extension in VS Code or another static web server. The app uses the Supabase JavaScript CDN and connects to project `obbxdederwlzeoudajhi`. The project URL and browser-safe publishable key are configured in `supabase-client.js`; never put a Supabase secret or service-role key in frontend code.
 
+## Run the tests
+
+Install dependencies once, from the project root:
+
+```powershell
+npm install
+```
+
+Run the complete suite:
+
+```powershell
+npm run test:all
+```
+
+This runs the edge-function contract tests and the Playwright browser tests. Playwright starts the local test server on `http://127.0.0.1:4173`; an existing server on that port is reused.
+
+Run individual groups when investigating a failure:
+
+```powershell
+# Edge-function contract tests
+npm run test:edge
+
+# All page, game, and component browser tests
+npm test -- tests/pages tests/games tests/components
+
+# Number Roll only
+npx playwright test tests/games/number-roll.spec.js
+
+# Type Sprint only
+npx playwright test tests/games/type-sprint.spec.js
+
+# Pages only
+npx playwright test tests/pages
+
+# Shared components only
+npx playwright test tests/components
+```
+
+The real authenticated Number Roll integration test uses `test@example.com` with password `Password` by default. Override the credentials in PowerShell when needed:
+
+```powershell
+$env:QUESTLINE_E2E_EMAIL = "your-test-account@example.com"
+$env:QUESTLINE_E2E_PASSWORD = "your-test-password"
+npx playwright test tests/integration/real-auth.spec.js
+```
+
+The fixture-based tests do not require a Supabase account. The integration test does require network access to Supabase and a valid test account. A failing test is expected when the current build does not satisfy an intended behavior; the Number Roll backend-error test currently detects that the app replaces the server error with a generic message.
+
 ## Login and Supabase setup
 
 1. In the Supabase dashboard for project `obbxdederwlzeoudajhi`, enable **Authentication Ã¢â€ â€™ Providers Ã¢â€ â€™ Email**.
