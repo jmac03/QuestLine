@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const email = process.env.QUESTLINE_E2E_EMAIL || 'test@example.com';
+const email = process.env.QUESTLINE_E2E_EMAIL || 'test@gmail.com';
 const password = process.env.QUESTLINE_E2E_PASSWORD || 'Password';
 
 test('real authenticated Number Roll loads and persists a roll', async ({ page }) => {

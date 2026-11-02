@@ -2,7 +2,7 @@ export const user = { id: '11111111-1111-4111-8111-111111111111', email: 'tester
 export const track = { id: '22222222-2222-4222-8222-222222222222', slug: 'adventurer', name: 'Adventurer', description: 'Test track' };
 export const milestone = { id: '33333333-3333-4333-8333-333333333333', track_id: track.id, points_required: 10, name: 'Song reward', reward_payload: { type: 'song', song_id: 'big-waves' } };
 
-export const mockSupabase = ({ authenticated = true, energy = 3, rewardPoints = 10, rollError = null } = {}) => `
+export const mockSupabase = ({ authenticated = true, energy = 3, rewardPoints = 10, rollError = null, ownedSongId = null } = {}) => `
   (() => {
     const user = ${JSON.stringify(authenticated ? user : null)};
     const track = ${JSON.stringify(track)};
@@ -18,7 +18,7 @@ export const mockSupabase = ({ authenticated = true, energy = 3, rewardPoints = 
       onAuthStateChange: (callback) => { window.__authCallback = callback; return { data: { subscription: { unsubscribe() {} } } }; },
     };
     const query = (table) => {
-      const result = table === 'reward_tracks' ? [track] : table === 'reward_track_milestones' ? [milestone] : table === 'user_reward_track_progress' ? [{ track_id: track.id, points: rewardPoints }] : table === 'user_reward_track_selections' ? [{ track_id: track.id }] : [];
+      const result = table === 'reward_tracks' ? [track] : table === 'reward_track_milestones' ? [milestone] : table === 'user_reward_track_progress' ? [{ track_id: track.id, points: rewardPoints }] : table === 'user_reward_track_selections' ? [{ track_id: track.id }] : table === 'user_reward_grants' && ${JSON.stringify(ownedSongId)} ? [{ reward_payload: { type: 'song', song_id: ${JSON.stringify(ownedSongId)} } }] : [];
       const builder = { select: () => builder, eq: () => builder, order: () => builder, maybeSingle: async () => ({ data: result[0] || null, error: null }), then: (resolve) => resolve({ data: result, error: null }) };
       return builder;
     };

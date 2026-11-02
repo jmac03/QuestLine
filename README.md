@@ -59,7 +59,7 @@ npx playwright test tests/pages
 npx playwright test tests/components
 ```
 
-The real authenticated Number Roll integration test uses `test@example.com` with password `Password` by default. Override the credentials in PowerShell when needed:
+The real authenticated Number Roll integration test uses `test@gmail.com` with password `Password` by default. Override the credentials in PowerShell when needed:
 
 ```powershell
 $env:QUESTLINE_E2E_EMAIL = "your-test-account@example.com"
@@ -77,13 +77,15 @@ The fixture-based tests do not require a Supabase account. The integration test 
 4. Use the profile control on the library page to create an account or sign in. After account creation, the form switches back to Sign in so the new account can be used immediately.
 5. Once signed in, select **Number Roll**. Its separate page restores the same-origin Supabase session and gates game access on a signed-in user.
 
-The game invokes the existing `get_roll_state` and `roll_number` Postgres RPC functions as the authenticated user. Both functions must be available to the `authenticated` role; the roll function must validate energy and award score server-side. The page does not calculate or persist scores in the browser.
+The game invokes get_roll_state and roll_number Postgres RPC functions as the authenticated user. The redesign adds the pure number_roll_result(integer) evaluator so scoring and badges have one server-side source of truth. The optional number-roll Edge Function exposes the same authenticated roll operation over HTTP. The clean migration intentionally replaces only the Number Roll tables and functions; account, reward, and song tables are left untouched. No browser-side score calculation is trusted.
+
+For a one-time setup, run supabase/migrations/20261102000002_consolidated.sql. It includes the final reward helper, account-row security, and destructive clean Number Roll reset. It expects Supabase Auth and the existing reward tables to already exist. Deploy supabase/functions/number-roll if the HTTP edge endpoint is needed.
 
 The dedicated Rewards page loads active reward tracks, the signed-in user's selection and point progress, track milestones, and granted rewards. Select a track with **Choose this track**; the page saves the choice through the `select_reward_track` RPC. These reward tables and the RPC must be available to the authenticated user in Supabase.
 
 Song rewards are currently stored in the app's local catalog in `song-rewards.js`. Grant creation remains server-controlled: write a payload such as `{"type":"song","song_id":"fire-behind-the-weave"}` into the existing `user_reward_grants.reward_payload` column. The music picker combines the built-in songs with songs returned by `window.questLineSongs.listOwned()`, and filters every reward song against the shared catalog. Music preferences are stored only in browser `localStorage`, scoped per signed-in user (or the guest device), with a page override winning over the profile default, which wins over that page's built-in song.
 
-The migration `supabase/migrations/20261019000001_song_reward_grants.sql` adds the server-only `grant_song_reward` helper for creating that payload without storing song metadata in Supabase. Apply `supabase/migrations/20261023000001_secure_account_rows.sql` to enable row-level security for account-owned reward, progress, and track-selection rows; client writes remain blocked while server-side RPCs and service-role jobs retain control.
+The consolidated migration adds the server-only `grant_song_reward` helper and enables row-level security for account-owned reward, progress, and track-selection rows; client writes remain blocked while server-side RPCs and service-role jobs retain control.
 
 
 The `supabase/functions/claim-reward/index.ts` edge function is deployed in Supabase as `claim-song-reward`. The Rewards UI displays **Claim song** for a reached song milestone on the selected track and calls `claim-song-reward` with only `{ "milestone_id": "..." }`. The function authenticates the caller, derives the user from the JWT, verifies the selected track and point threshold, reads the song ID from the milestone's server-side payload, prevents an already-granted song from being claimed again, and calls the restricted database function with the service role. It never trusts a client-provided user ID or song ID.

@@ -36,6 +36,14 @@ function showGameError(message) {
   gameError.hidden = !message;
 }
 
+function getErrorMessage(error, fallback = 'Unknown error') {
+  return error instanceof Error
+    ? error.message
+    : error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
+      ? error.message
+      : fallback;
+}
+
 async function loadRewardTheme(user) {
   const requestId = ++themeRequestId;
   window.questLineRewardTheme?.reset();
@@ -192,7 +200,7 @@ async function loadRollState() {
     showGameError('');
     renderState(data);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    const message = getErrorMessage(error);
     showGameError(`Could not load your game state: ${message}`);
     setRollStatus('Your game state could not be loaded.', true);
     rollButton.textContent = 'Try again';
@@ -288,7 +296,7 @@ rollButton.addEventListener('click', async () => {
     renderLatestRoll(data);
     setRollStatus(`You rolled ${data.roll} and earned ${Number(data.scoreGain).toLocaleString()} points.`);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'The roll request could not be completed.';
+    const message = getErrorMessage(error, 'The roll request could not be completed.');
     setRollStatus(rollSaved ? `Roll saved, but the game could not refresh: ${message}` : message, true);
     rollButton.disabled = !currentState.canRoll;
     rollButton.textContent = currentState.canRoll ? 'Roll for a number' : 'Out of energy';
