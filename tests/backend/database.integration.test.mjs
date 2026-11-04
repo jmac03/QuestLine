@@ -194,6 +194,51 @@ if (!configured) {
     assert.deepEqual(grants.body[0].reward_payload, { type: 'song', song_id: 'big-waves' });
   });
 
+  test('stores a Type Sprint run and makes retries idempotent', async () => {
+    const requestId = crypto.randomUUID();
+    const result = await rpc('complete_typing_round', {
+      p_request_id: requestId,
+      p_duration_seconds: 30,
+      p_prompt_pack: 'sentences',
+      p_prompt: 'abc',
+      p_typed_text: 'abc',
+      p_elapsed_ms: 60000,
+    });
+
+    assert.equal(result.response.ok, true, JSON.stringify(result.body));
+    assert.equal(result.body.requestId, requestId);
+    assert.equal(result.body.typedCharacters, 3);
+    assert.equal(result.body.correctCharacters, 3);
+    assert.equal(result.body.accuracy, 100);
+    assert.equal(result.body.wpm, 1);
+    assert.equal(result.body.score, 1);
+
+    const saved = await request(
+      `/rest/v1/typing_sprint_rounds?request_id=eq.${requestId}&select=*`,
+    );
+    assert.equal(saved.response.ok, true, JSON.stringify(saved.body));
+    assert.equal(saved.body.length, 1);
+    assert.equal(saved.body[0].user_id, temporaryUserId);
+    assert.equal(saved.body[0].score, 1);
+
+    const retry = await rpc('complete_typing_round', {
+      p_request_id: requestId,
+      p_duration_seconds: 30,
+      p_prompt_pack: 'sentences',
+      p_prompt: 'abc',
+      p_typed_text: 'abc',
+      p_elapsed_ms: 60000,
+    });
+    assert.equal(retry.response.ok, true, JSON.stringify(retry.body));
+    assert.deepEqual(retry.body, result.body);
+
+    const duplicateRows = await request(
+      `/rest/v1/typing_sprint_rounds?request_id=eq.${requestId}&select=id`,
+    );
+    assert.equal(duplicateRows.response.ok, true, JSON.stringify(duplicateRows.body));
+    assert.equal(duplicateRows.body.length, 1);
+  });
+
   test('rejects invalid roll requests and anonymous database access', async () => {
     const invalidRequest = await rpc('roll_number', { p_request_id: 'not-a-uuid' });
     assert.equal(invalidRequest.response.ok, false);

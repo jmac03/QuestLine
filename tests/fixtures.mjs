@@ -40,6 +40,18 @@ export const mockSupabase = ({ authenticated = true, energy = 3, rewardPoints = 
           localStorage.setItem('questline-test-reward-points', String(rewardPoints));
           return { data: { roll: 42, scoreGain: 15, rarity: 'Rare', badges: ['lucky_number'], canRoll: true, currentEnergy: 2, maxEnergy: 10, totalScore: 135, bestScore: 95 }, error: null };
         }
+        if (name === 'complete_typing_round') {
+          return { data: {
+            requestId: args.p_request_id,
+            wpm: 42,
+            accuracy: 100,
+            score: 42,
+            typedCharacters: args.p_typed_text.length,
+            correctCharacters: args.p_typed_text.length,
+            rewardTrackId: track.id,
+            rewardPoints: rewardPoints,
+          }, error: null };
+        }
         return { data: null, error: null };
       },
       functions: { invoke: async (name, options) => { window.__mockCalls.push({ type: 'function', name, options }); return { data: { grant_id: '44444444-4444-4444-8444-444444444444', song_id: 'big-waves' }, error: null }; } },

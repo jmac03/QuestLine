@@ -57,4 +57,43 @@ test.describe('Type Sprint game', () => {
     await page.reload();
     await expect(page.locator('#best-wpm')).toHaveText('999');
   });
+
+  test('saves the latest run locally for a guest and overwrites it on the next run', async ({ page }) => {
+    await openPage(page, '/typing.html', { authenticated: false });
+    await page.locator('#start-button').click();
+    const firstPrompt = await page.locator('#typing-prompt').innerText();
+    await page.locator('#typing-input').fill(firstPrompt);
+
+    const firstRun = await page.evaluate(() => JSON.parse(localStorage.getItem('questline-type-sprint-latest-run')));
+    expect(firstRun.version).toBe(1);
+    expect(firstRun.prompt).toBe(firstPrompt);
+    expect(firstRun.typedText).toBe(firstPrompt);
+    expect(firstRun.requestId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(firstRun.submittedUserId).toBeNull();
+
+    await page.locator('#again-button').click();
+    const secondPrompt = await page.locator('#typing-prompt').innerText();
+    await page.locator('#typing-input').fill(secondPrompt);
+    const secondRun = await page.evaluate(() => JSON.parse(localStorage.getItem('questline-type-sprint-latest-run')));
+    expect(secondRun.requestId).not.toBe(firstRun.requestId);
+    expect(secondRun.prompt).toBe(secondPrompt);
+  });
+
+  test('pushes the latest local run when the user is authenticated', async ({ page }) => {
+    await openPage(page, '/typing.html', { authenticated: true });
+    await page.locator('#start-button').click();
+    const prompt = await page.locator('#typing-prompt').innerText();
+    await page.locator('#typing-input').fill(prompt);
+
+    await expect.poll(async () => page.evaluate(() => window.__mockCalls.filter(call => call.name === 'complete_typing_round').length)).toBe(1);
+    const call = await page.evaluate(() => window.__mockCalls.find(entry => entry.name === 'complete_typing_round'));
+    expect(call.args.p_prompt).toBe(prompt);
+    expect(call.args.p_typed_text).toBe(prompt);
+    expect(call.args.p_duration_seconds).toBe(30);
+    expect(call.args.p_prompt_pack).toBe('sentences');
+
+    const savedRun = await page.evaluate(() => JSON.parse(localStorage.getItem('questline-type-sprint-latest-run')));
+    expect(savedRun.submittedUserId).toBe('11111111-1111-4111-8111-111111111111');
+    expect(savedRun.serverResult.wpm).toBe(42);
+  });
 });

@@ -1,4 +1,4 @@
-/* Type Sprint keeps all round state in the browser. */
+/* Type Sprint keeps the latest completed run locally and syncs it when possible. */
 const prompts = {
   sentences: [
     'A clear morning makes room for a bright idea.',
@@ -21,6 +21,8 @@ const prompts = {
 const settings = { duration: 30, pack: 'sentences' };
 const standardWordLength = 5;
 const bestKey = 'questline-type-sprint-best';
+const latestRunKey = 'questline-type-sprint-latest-run';
+const supabaseClient = window.questLineSupabase;
 const settingsPanel = document.querySelector('#settings-panel');
 const gamePanel = document.querySelector('#game-panel');
 const resultPanel = document.querySelector('#result-panel');
@@ -30,6 +32,48 @@ let prompt = '';
 let startedAt = 0;
 let timer = null;
 let finished = false;
+let activeUser = null;
+
+function readLatestRun() {
+  try {
+    const value = JSON.parse(localStorage.getItem(latestRunKey) || 'null');
+    return value && value.version === 1 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveLatestRun(run) {
+  localStorage.setItem(latestRunKey, JSON.stringify(run));
+}
+
+async function syncLatestRun(user = activeUser) {
+  const run = readLatestRun();
+  if (!user || !supabaseClient || !run || run.submittedUserId === user.id) return;
+
+  const { data, error } = await supabaseClient.rpc('complete_typing_round', {
+    p_request_id: run.requestId,
+    p_duration_seconds: run.durationSeconds,
+    p_prompt_pack: run.promptPack,
+    p_prompt: run.prompt,
+    p_typed_text: run.typedText,
+    p_elapsed_ms: run.elapsedMs,
+  });
+
+  if (error) {
+    console.warn('Could not sync the latest Type Sprint run.', error);
+    return;
+  }
+
+  // Keep the run locally until the next run replaces it, but mark it as safely
+  // assigned so a later account on the same browser cannot receive it too.
+  saveLatestRun({ ...run, submittedUserId: user.id, serverResult: data || null });
+  if (data?.wpm != null) {
+    const best = Math.max(Number(data.wpm) || 0, Number(localStorage.getItem(bestKey) || 0));
+    localStorage.setItem(bestKey, String(best));
+    document.querySelector('#best-wpm').textContent = best;
+  }
+}
 
 function updatePackNote() {
   const isWordPack = settings.pack === 'words';
@@ -115,6 +159,18 @@ function finishRound() {
   const best = Math.max(speed, previousBest);
 
   localStorage.setItem(bestKey, best);
+  saveLatestRun({
+    version: 1,
+    requestId: crypto.randomUUID(),
+    durationSeconds: settings.duration,
+    promptPack: settings.pack,
+    prompt,
+    typedText: typingInput.value,
+    elapsedMs: startedAt ? Math.max(1, Date.now() - startedAt) : 0,
+    submittedUserId: null,
+    createdAt: new Date().toISOString(),
+  });
+  void syncLatestRun();
   document.querySelector('#best-wpm').textContent = best;
   document.querySelector('#result-wpm').textContent = speed;
   document.querySelector('#result-accuracy').textContent = accuracy;
@@ -197,3 +253,17 @@ typingInput.addEventListener('input', () => {
 
 showBestScore();
 updatePackNote();
+
+if (supabaseClient) {
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    activeUser = session?.user || null;
+    void syncLatestRun(activeUser);
+  });
+
+  supabaseClient.auth.getSession()
+    .then(({ data }) => {
+      activeUser = data.session?.user || null;
+      void syncLatestRun(activeUser);
+    })
+    .catch((error) => console.warn('Could not restore the Type Sprint session.', error));
+}
