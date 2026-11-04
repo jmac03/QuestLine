@@ -109,6 +109,13 @@ window.addEventListener('questline:music-ready', (event) => {
   renderSongs(event.detail?.songs || []);
 });
 
+// site-ui.js can finish loading the catalog before this script is evaluated.
+// Recover that state instead of leaving the preference control disabled.
+if (window.questLineMusicReady) {
+  musicReady = true;
+  renderSongs(window.questLineMusic?.getAvailableSongs?.() || []);
+}
+
 if (supabaseClient) {
   supabaseClient.auth.onAuthStateChange((_event, session) => renderAccount(session?.user || null));
   supabaseClient.auth.getSession().then(({ data, error }) => {

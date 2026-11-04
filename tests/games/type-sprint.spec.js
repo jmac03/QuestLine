@@ -34,4 +34,27 @@ test.describe('Type Sprint game', () => {
     await page.locator('#again-button').click();
     await expect(page.locator('#game-panel')).toBeVisible();
   });
+
+  test('calculates reduced accuracy for incorrect input', async ({ page }) => {
+    await openPage(page, '/typing.html', { authenticated: false });
+    await page.locator('#start-button').click();
+    const prompt = await page.locator('#typing-prompt').innerText();
+    const incorrect = `${prompt.slice(0, -1)}${prompt.endsWith('x') ? 'y' : 'x'}`;
+    await page.locator('#typing-input').fill(incorrect);
+    await expect(page.locator('#result-panel')).toBeVisible();
+    await expect(page.locator('#result-accuracy')).not.toHaveText('100');
+  });
+
+  test('persists the best WPM locally and preserves it when a later run is slower', async ({ page }) => {
+    await openPage(page, '/typing.html', { authenticated: false });
+    await page.evaluate(() => localStorage.setItem('questline-type-sprint-best', '999'));
+    await page.reload();
+    await expect(page.locator('#best-wpm')).toHaveText('999');
+    await page.locator('#start-button').click();
+    const prompt = await page.locator('#typing-prompt').innerText();
+    await page.locator('#typing-input').fill(prompt);
+    await expect(page.locator('#best-wpm')).toHaveText('999');
+    await page.reload();
+    await expect(page.locator('#best-wpm')).toHaveText('999');
+  });
 });

@@ -45,4 +45,20 @@ test.describe('Number Roll game', () => {
     await expect(page.locator('#roll-status')).toHaveText('roll_number failed');
     await expect(page.locator('#result-number')).toHaveText('17');
   });
+
+  test('disables rolling when authoritative state has no energy', async ({ page }) => {
+    await openPage(page, '/number-roll.html', { energy: 0 });
+    await expect(page.locator('#energy-label')).toHaveText('0 / 10');
+    await expect(page.locator('#roll-button')).toBeDisabled();
+    await expect(page.locator('#roll-button')).toHaveText('Out of energy');
+    await expect(page.locator('#roll-status')).toHaveText('You are out of energy.');
+  });
+
+  test('refreshes state when the page becomes visible again', async ({ page }) => {
+    await openPage(page, '/number-roll.html');
+    await expect(page.locator('#roll-game')).toBeVisible();
+    const before = await page.evaluate(() => window.__mockCalls.filter(call => call.name === 'get_roll_state').length);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect.poll(() => page.evaluate(() => window.__mockCalls.filter(call => call.name === 'get_roll_state').length)).toBeGreaterThan(before);
+  });
 });

@@ -100,6 +100,7 @@ function setupMusicPlayer() {
     renderSongs();
     playCurrentSong(resolveSong());
     musicReady = true;
+    window.questLineMusicReady = true;
     window.dispatchEvent(new CustomEvent('questline:music-ready', { detail: { songs: availableSongs, user } }));
     playMusic();
   }
@@ -184,6 +185,11 @@ function setupMusicPlayer() {
       playCurrentSong(resolveSong());
     },
   };
+
+  // profile.js is loaded after this script on the profile page. If music
+  // finished loading before profile.js registered its event listener, expose
+  // the ready state so the profile controls can initialize immediately.
+  if (musicReady) window.questLineMusicReady = true;
 }
 
 window.questLineUI = { updateFavicon };

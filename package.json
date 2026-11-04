@@ -4,7 +4,8 @@
   "scripts": {
     "test": "playwright test",
     "test:edge": "node --test tests/backend/edge-function-contract.test.mjs",
-    "test:all": "npm run test:edge && npm test"
+    "test:db": "node --test tests/backend/database.integration.test.mjs",
+    "test:all": "npm run test:edge && npm run test:db && npm test"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

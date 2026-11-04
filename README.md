@@ -43,6 +43,12 @@ Run individual groups when investigating a failure:
 # Edge-function contract tests
 npm run test:edge
 
+# Database integration tests (requires an isolated Supabase test project)
+$env:QUESTLINE_SUPABASE_URL = "https://your-project.supabase.co"
+$env:QUESTLINE_SUPABASE_ANON_KEY = "your-publishable-key"
+$env:QUESTLINE_SUPABASE_SERVICE_ROLE_KEY = "your-service-role-key"
+npm run test:db
+
 # All page, game, and component browser tests
 npm test -- tests/pages tests/games tests/components
 
@@ -59,7 +65,7 @@ npx playwright test tests/pages
 npx playwright test tests/components
 ```
 
-The real authenticated Number Roll integration test uses `test@gmail.com` with password `Password` by default. Override the credentials in PowerShell when needed:
+The real authenticated Number Roll integration test is opt-in. Set valid credentials in PowerShell when needed:
 
 ```powershell
 $env:QUESTLINE_E2E_EMAIL = "your-test-account@example.com"
@@ -68,6 +74,8 @@ npx playwright test tests/integration/real-auth.spec.js
 ```
 
 The fixture-based tests do not require a Supabase account. The integration test does require network access to Supabase and a valid test account. A failing test is expected when the current build does not satisfy an intended behavior; the Number Roll backend-error test currently detects that the app replaces the server error with a generic message.
+
+The database integration tests require a dedicated test Supabase project and a service-role key. They create a temporary confirmed Auth user, exercise the authenticated RPCs through the REST API, and delete the temporary user when finished. They cover deterministic Number Roll scoring, initial state, persisted rolls, idempotent request IDs, invalid requests, and anonymous access rejection. Never point them at a production project.
 
 ## Login and Supabase setup
 
