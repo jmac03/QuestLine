@@ -21,6 +21,23 @@ test.describe('Type Sprint game', () => {
     await expect(page.locator('#pack-note-title')).toHaveText('Word burst pack');
   });
 
+  test('enables ghost race mode inside Type Sprint', async ({ page }) => {
+    await openPage(page, '/typing.html', { authenticated: false });
+    await page.getByRole('button', { name: '60 WPM' }).click();
+    await expect(page.locator('#ghost-speed-note')).toContainText('ghost targets 60 WPM');
+    await page.getByRole('button', { name: 'Race a ghost' }).click();
+    await expect(page.getByRole('button', { name: 'Race a ghost' })).toHaveClass(/is-selected/);
+    await expect(page.getByRole('button', { name: '60 WPM' })).toHaveClass(/is-selected/);
+    await page.locator('#start-button').click();
+    await expect(page.locator('#ghost-race')).toBeVisible();
+    await expect(page.locator('#round-status')).toContainText('targeting 60 WPM');
+    await expect(page.locator('#player-progress')).toHaveCSS('width', '0px');
+    const prompt = await page.locator('#typing-prompt').innerText();
+    await page.locator('#typing-input').fill(prompt);
+    await expect(page.locator('#result-panel')).toBeVisible();
+    await expect(page.locator('#result-score')).not.toHaveText('0');
+  });
+
   test('supports new prompt, quit, replay, and settings navigation', async ({ page }) => {
     await openPage(page, '/typing.html', { authenticated: false });
     await page.locator('#start-button').click();
@@ -43,6 +60,18 @@ test.describe('Type Sprint game', () => {
     await page.locator('#typing-input').fill(incorrect);
     await expect(page.locator('#result-panel')).toBeVisible();
     await expect(page.locator('#result-accuracy')).not.toHaveText('100');
+  });
+
+  test('keeps a mistake penalty after the typo is corrected', async ({ page }) => {
+    await openPage(page, '/typing.html', { authenticated: false });
+    await page.locator('#start-button').click();
+    const prompt = await page.locator('#typing-prompt').innerText();
+    const wrongCharacter = prompt[0] === 'x' ? 'y' : 'x';
+    await page.locator('#typing-input').pressSequentially(wrongCharacter);
+    await page.locator('#typing-input').press('Backspace');
+    await page.locator('#typing-input').fill(prompt);
+    await expect(page.locator('#result-panel')).toBeVisible();
+    await expect(page.locator('#result-mistakes')).toHaveText('1');
   });
 
   test('persists the best WPM locally and preserves it when a later run is slower', async ({ page }) => {

@@ -1,4 +1,6 @@
-/* Type Sprint keeps the latest completed run locally and syncs it when possible. */
+/* Type Sprint keeps the latest completed run locally and syncs it when possible.
+   Account sync requires the complete_typing_round database function; guest
+   play and local persistence work without Supabase. */
 const prompts = {
   sentences: [
     'A clear morning makes room for a bright idea.',
@@ -18,7 +20,7 @@ const prompts = {
   ]
 };
 
-const settings = { duration: 30, pack: 'sentences' };
+const settings = { duration: 30, pack: 'sentences', mode: 'solo', ghostWpm: 45 };
 const standardWordLength = 5;
 const bestKey = 'questline-type-sprint-best';
 const latestRunKey = 'questline-type-sprint-latest-run';
@@ -27,12 +29,21 @@ const settingsPanel = document.querySelector('#settings-panel');
 const gamePanel = document.querySelector('#game-panel');
 const resultPanel = document.querySelector('#result-panel');
 const typingInput = document.querySelector('#typing-input');
+const ghostRace = document.querySelector('#ghost-race');
+const playerProgress = document.querySelector('#player-progress');
+const ghostProgress = document.querySelector('#ghost-progress');
+const ghostSpeedSetting = document.querySelector('#ghost-speed-setting');
+const ghostSpeedNote = document.querySelector('#ghost-speed-note');
 
 let prompt = '';
 let startedAt = 0;
 let timer = null;
 let finished = false;
 let activeUser = null;
+let completedCharacters = 0;
+let ghostLost = false;
+let mistakeCount = 0;
+let lastInputValue = '';
 
 function readLatestRun() {
   try {
@@ -81,6 +92,11 @@ function updatePackNote() {
   document.querySelector('#pack-note-copy').textContent = isWordPack
     ? 'Clean, quick words for a simple rhythm warm-up.'
     : 'Short, natural lines with punctuation and rhythm.';
+}
+
+function updateGhostDescription() {
+  if (!ghostSpeedNote) return;
+  ghostSpeedNote.textContent = `The ghost targets ${settings.ghostWpm} WPM. Win by finishing the prompt before the ghost reaches the finish; each mistake gives it extra ground.`;
 }
 
 function makePrompt() {
@@ -144,6 +160,18 @@ function updateStats() {
   document.querySelector('#accuracy-value').textContent = getAccuracy();
   document.querySelector('#wpm-value').textContent = getWpm();
   renderPrompt();
+  updateGhostRace();
+}
+
+function updateGhostRace() {
+  if (settings.mode !== 'ghost' || !startedAt) return;
+  const playerPercent = Math.min(100, Math.round((typingInput.value.length / prompt.length) * 100));
+  const secondsPassed = Math.max(0, (Date.now() - startedAt) / 1000);
+  const ghostSeconds = (prompt.length / standardWordLength) / settings.ghostWpm * 60;
+  const ghostPercent = Math.min(100, Math.round((secondsPassed / ghostSeconds) * 100) + mistakeCount * 2);
+  playerProgress.style.width = `${playerPercent}%`;
+  ghostProgress.style.width = `${ghostPercent}%`;
+  if (ghostPercent >= 100 && playerPercent < 100) ghostLost = true;
 }
 
 function finishRound() {
@@ -155,8 +183,9 @@ function finishRound() {
 
   const speed = getWpm();
   const accuracy = getAccuracy();
+  const score = Math.max(0, Math.round(speed * accuracy / 100) - mistakeCount * 2);
   const previousBest = Number(localStorage.getItem(bestKey) || 0);
-  const best = Math.max(speed, previousBest);
+  const best = Math.max(score, previousBest);
 
   localStorage.setItem(bestKey, best);
   saveLatestRun({
@@ -174,9 +203,11 @@ function finishRound() {
   document.querySelector('#best-wpm').textContent = best;
   document.querySelector('#result-wpm').textContent = speed;
   document.querySelector('#result-accuracy').textContent = accuracy;
+  document.querySelector('#result-score').textContent = score;
+  document.querySelector('#result-mistakes').textContent = mistakeCount;
   document.querySelector('#result-characters').textContent = typingInput.value.length;
-  document.querySelector('#result-summary').textContent = `You typed ${typingInput.value.length} characters at ${speed} WPM with ${accuracy}% accuracy.`;
-  document.querySelector('#result-title').textContent = accuracy >= 95 ? 'Beautiful control.' : accuracy >= 85 ? 'Nice run.' : 'Good foundation.';
+  document.querySelector('#result-summary').textContent = `You typed ${typingInput.value.length} characters at ${speed} WPM with ${accuracy}% accuracy, ${mistakeCount} mistakes, and a record score of ${score}.`;
+  document.querySelector('#result-title').textContent = settings.mode === 'ghost' && ghostLost ? 'The ghost got there first.' : accuracy >= 95 ? 'Beautiful control.' : accuracy >= 85 ? 'Nice run.' : 'Good foundation.';
 
   gamePanel.hidden = true;
   resultPanel.hidden = false;
@@ -186,6 +217,7 @@ function updateTimer() {
   const secondsPassed = Math.floor((Date.now() - startedAt) / 1000);
   const secondsLeft = Math.max(0, settings.duration - secondsPassed);
   document.querySelector('#time-value').textContent = secondsLeft;
+  updateGhostRace();
 
   if (!secondsLeft) finishRound();
 }
@@ -194,6 +226,10 @@ function startRound() {
   clearInterval(timer);
   timer = null;
   startedAt = 0;
+  completedCharacters = 0;
+  ghostLost = false;
+  mistakeCount = 0;
+  lastInputValue = '';
   prompt = makePrompt();
   finished = false;
   typingInput.value = '';
@@ -201,8 +237,15 @@ function startRound() {
   document.querySelector('#time-value').textContent = settings.duration;
   document.querySelector('#wpm-value').textContent = 0;
   document.querySelector('#accuracy-value').textContent = 100;
+  document.querySelector('#mistakes-value').textContent = 0;
   document.querySelector('#progress-value').textContent = 0;
-  document.querySelector('#round-status').textContent = 'The clock starts with your first key.';
+  ghostRace.hidden = settings.mode !== 'ghost';
+  ghostSpeedSetting.hidden = false;
+  playerProgress.style.width = '0%';
+  ghostProgress.style.width = '0%';
+  document.querySelector('#round-status').textContent = settings.mode === 'ghost'
+    ? `The ghost is targeting ${settings.ghostWpm} WPM. Finish before it reaches the line.`
+    : 'The clock starts with your first key.';
   renderPrompt();
   settingsPanel.hidden = true;
   resultPanel.hidden = true;
@@ -217,13 +260,15 @@ function showBestScore() {
 document.querySelectorAll('.choice-button').forEach((button) => {
   button.addEventListener('click', () => {
     const setting = button.dataset.setting;
-    settings[setting] = setting === 'duration' ? Number(button.dataset.value) : button.dataset.value;
+    settings[setting] = ['duration', 'ghostWpm'].includes(setting) ? Number(button.dataset.value) : button.dataset.value;
 
     document.querySelectorAll(`[data-setting="${setting}"]`).forEach((choice) => {
       choice.classList.toggle('is-selected', choice === button);
     });
 
     updatePackNote();
+    if (setting === 'mode') ghostSpeedSetting.setAttribute('aria-disabled', String(settings.mode !== 'ghost'));
+    if (setting === 'ghostWpm') updateGhostDescription();
   });
 });
 
@@ -241,18 +286,29 @@ document.querySelector('#new-prompt-button').addEventListener('click', () => {
   typingInput.focus();
 });
 
+if (ghostRace) ghostRace.hidden = true;
+
 typingInput.addEventListener('input', () => {
   if (!startedAt) {
     startedAt = Date.now();
     timer = setInterval(updateTimer, 250);
   }
 
+  const nextValue = typingInput.value;
+  if (nextValue.length > lastInputValue.length) {
+    for (let index = lastInputValue.length; index < nextValue.length; index += 1) {
+      if (nextValue[index] !== prompt[index]) mistakeCount += 1;
+    }
+  }
+  lastInputValue = nextValue;
+  document.querySelector('#mistakes-value').textContent = mistakeCount;
   updateStats();
   if (typingInput.value.length >= prompt.length) finishRound();
 });
 
 showBestScore();
 updatePackNote();
+updateGhostDescription();
 
 if (supabaseClient) {
   supabaseClient.auth.onAuthStateChange((_event, session) => {

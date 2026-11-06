@@ -23,15 +23,21 @@
 .pack-note-icon { color: var(--blue); font-size: 1.1rem; }
 .pack-note p { margin: 0; color: var(--muted); font-size: .77rem; line-height: 1.5; }
 .pack-note strong { color: var(--ink); font-weight: 500; }
+.ghost-speed-note { max-width: 540px; margin: 12px 0 0; color: var(--muted); font-size: .75rem; line-height: 1.5; }
 .primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 13px; min-height: 49px; padding: 0 24px; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); font-size: .8rem; }
 .primary-button:hover { background: var(--blue); color: var(--ink); }
 .text-button { border: 0; background: transparent; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .65rem; text-transform: uppercase; }
 .text-button:hover { color: var(--ink); }
-.live-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 30px 0 24px; }
+.live-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 30px 0 24px; }
 .live-stats > div, .result-grid > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 7px; padding: 15px 17px; border: 1px solid var(--line); }
 .live-stats span, .result-grid span { width: 100%; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .6rem; text-transform: uppercase; }
 .live-stats strong, .result-grid strong { font-family: var(--serif); font-size: 2rem; font-weight: 400; letter-spacing: -.06em; }
 .live-stats small, .result-grid small { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .58rem; text-transform: uppercase; }
+.ghost-race { display: grid; gap: 10px; margin: 0 0 24px; padding: 15px 0 4px; border-top: 1px solid var(--line); }
+.ghost-lane { position: relative; height: 25px; overflow: hidden; border-bottom: 1px dashed var(--line); background: repeating-linear-gradient(90deg, transparent 0 45px, rgb(212 214 206 / 35%) 45px 46px); }
+.ghost-lane span { position: absolute; z-index: 2; top: 7px; left: 0; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .55rem; }
+.ghost-lane i { position: absolute; top: 3px; left: 0; width: 0; height: 19px; border-radius: 12px; background: var(--blue); transition: width .2s linear; }
+.ghost-lane:last-child i { background: var(--cream); border: 1px solid var(--muted); }
 .prompt-wrap { padding: 28px 0 25px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .prompt-label { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .62rem; text-transform: uppercase; }
 .typing-prompt { min-height: 110px; margin-top: 20px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: clamp(1.15rem, 2.3vw, 1.65rem); line-height: 1.7; }
@@ -46,6 +52,8 @@
 .result-panel .eyebrow { margin-bottom: 15px; }
 .result-summary { margin: 18px 0 26px; color: var(--muted); line-height: 1.6; }
 .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.result-grid-four { grid-template-columns: repeat(4, 1fr); }
+.result-grid-five { grid-template-columns: repeat(5, 1fr); }
 .result-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 28px; }
 .typing-note { margin: 18px 0 0; color: var(--muted); font-size: .72rem; }
 .typing-note span { color: var(--ink); font-weight: 600; }
@@ -58,7 +66,7 @@
   .personal-best { text-align: left; }
   .settings-panel, .game-panel, .result-panel { min-height: 530px; padding: 25px 19px; }
   .live-stats { grid-template-columns: repeat(2, 1fr); }
-  .result-grid { grid-template-columns: 1fr; }
+  .result-grid, .result-grid-four, .result-grid-five { grid-template-columns: 1fr; }
   .game-footer { align-items: start; flex-direction: column; }
   .typing-prompt { min-height: 145px; }
 }
