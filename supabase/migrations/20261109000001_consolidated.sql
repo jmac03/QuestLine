@@ -1,15 +1,135 @@
--- Typing Sprint rounds and reward-track integration.
+-- QuestLine consolidated migration, corrected for the current project.
 --
--- The client submits a completed run to complete_typing_round().
--- The function derives the typing metrics, stores the result, and applies
--- the score to the user's currently selected active reward track.
+-- Prerequisites:
+--   Supabase Auth and the existing reward tables must already exist.
 --
--- Prerequisite: the reward-track tables used below must already exist:
---   public.reward_tracks
---   public.reward_track_milestones
---   public.user_reward_track_selections
---   public.user_reward_track_progress
---   public.user_reward_grants
+-- Number Roll is already on its final schema and RPC implementation.
+-- Do not drop or recreate its tables or functions: preserve player balances,
+-- energy_regen_at, roll history, and private.regenerate_number_roll_energy().
+
+-- ============================================================
+-- Song reward grant helper
+-- ============================================================
+
+-- Remove the prior signature if it exists. The new helper requires a
+-- milestone ID and validates that the milestone belongs to the supplied track.
+drop function if exists public.grant_song_reward(uuid, uuid, text, text);
+
+create or replace function public.grant_song_reward(
+  p_user_id uuid,
+  p_track_id uuid,
+  p_reward_name text,
+  p_song_id text,
+  p_milestone_id uuid
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  new_grant_id uuid;
+begin
+  if p_user_id is null or p_track_id is null or p_milestone_id is null then
+    raise exception 'A user ID, track ID, and milestone ID are required';
+  end if;
+
+  if p_reward_name is null or pg_catalog.btrim(p_reward_name) = '' then
+    raise exception 'A reward name is required';
+  end if;
+
+  if p_song_id is null or pg_catalog.btrim(p_song_id) = '' then
+    raise exception 'A song ID is required';
+  end if;
+
+  if not exists (
+    select 1
+      from public.reward_track_milestones
+     where id = p_milestone_id
+       and track_id = p_track_id
+  ) then
+    raise exception 'Milestone does not belong to the specified track';
+  end if;
+
+  insert into public.user_reward_grants (
+    user_id,
+    milestone_id,
+    track_id,
+    reward_name,
+    reward_payload
+  )
+  values (
+    p_user_id,
+    p_milestone_id,
+    p_track_id,
+    p_reward_name,
+    pg_catalog.jsonb_build_object(
+      'type', 'song',
+      'song_id', p_song_id
+    )
+  )
+  returning id into new_grant_id;
+
+  return new_grant_id;
+end;
+$$;
+
+revoke all on function public.grant_song_reward(uuid, uuid, text, text, uuid)
+  from public, anon, authenticated;
+grant execute on function public.grant_song_reward(uuid, uuid, text, text, uuid)
+  to service_role;
+
+
+-- ============================================================
+-- Account-row table privileges
+-- ============================================================
+
+-- The current project already has owner-only SELECT policies on these tables.
+-- Preserve those policies; authenticated clients only need SELECT access.
+do $$
+declare
+  table_name text;
+begin
+  foreach table_name in array array[
+    'user_reward_grants',
+    'user_reward_track_progress',
+    'user_reward_track_selections'
+  ] loop
+    if to_regclass('public.' || table_name) is not null then
+      execute format(
+        'alter table public.%I enable row level security',
+        table_name
+      );
+      execute format(
+        'revoke all on table public.%I from public, anon',
+        table_name
+      );
+      execute format(
+        'revoke insert, update, delete on table public.%I from authenticated',
+        table_name
+      );
+      execute format(
+        'grant select on table public.%I to authenticated',
+        table_name
+      );
+    end if;
+  end loop;
+end $$;
+
+
+-- ============================================================
+-- Number Roll
+-- ============================================================
+
+-- Intentionally no Number Roll DDL or function replacement here.
+-- The current project already has the evaluator and RPCs, and those RPCs call
+-- private.regenerate_number_roll_energy(). Keeping the existing objects
+-- preserves current player rows, energy regeneration, and roll history.
+
+
+-- ============================================================
+-- Typing Sprint rounds and reward-track integration
+-- ============================================================
 
 create table if not exists public.typing_sprint_rounds (
   id uuid primary key default gen_random_uuid(),
@@ -41,8 +161,7 @@ create table if not exists public.typing_sprint_rounds (
   unique (user_id, request_id)
 );
 
--- Also supports installations where the rounds table was created before
--- the reward result columns were added.
+-- Support installations where these reward result columns were not yet added.
 alter table public.typing_sprint_rounds
   add column if not exists applied_track_id uuid
     references public.reward_tracks(id),
@@ -51,14 +170,27 @@ alter table public.typing_sprint_rounds
 create index if not exists typing_sprint_rounds_user_created_idx
   on public.typing_sprint_rounds (user_id, created_at desc);
 
--- ON CONFLICT (user_id, milestone_id) in the function requires this
--- uniqueness guarantee. The project currently has no such constraint.
+-- The RPC uses ON CONFLICT (user_id, milestone_id). Fail clearly rather than
+-- silently deleting or changing any existing grants if duplicates are present.
+do $$
+begin
+  if exists (
+    select 1
+      from public.user_reward_grants
+     group by user_id, milestone_id
+    having count(*) > 1
+  ) then
+    raise exception
+      'Cannot create unique grant index: duplicate user/milestone grants exist';
+  end if;
+end $$;
+
 create unique index if not exists user_reward_grants_user_milestone_uidx
   on public.user_reward_grants (user_id, milestone_id);
 
 alter table public.typing_sprint_rounds enable row level security;
 
-revoke all on table public.typing_sprint_rounds from anon, authenticated;
+revoke all on table public.typing_sprint_rounds from public, anon, authenticated;
 grant select on table public.typing_sprint_rounds to authenticated;
 
 drop policy if exists typing_sprint_rounds_read_own
@@ -135,10 +267,13 @@ begin
     raise exception 'Invalid elapsed time';
   end if;
 
-  -- Serialize calls with the same user/request ID. This prevents concurrent
-  -- retries from both awarding points before the unique round row is visible.
-  perform pg_advisory_xact_lock(
-    hashtextextended(v_user_id::text || ':' || p_request_id::text, 0)
+  -- Serialize calls with the same user/request ID so retries cannot award
+  -- reward points more than once.
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(
+      v_user_id::text || ':' || p_request_id::text,
+      0
+    )
   );
 
   select *
@@ -148,7 +283,7 @@ begin
      and request_id = p_request_id;
 
   if found then
-    return jsonb_build_object(
+    return pg_catalog.jsonb_build_object(
       'requestId', v_existing.request_id,
       'wpm', v_existing.wpm,
       'accuracy', v_existing.accuracy,
@@ -188,7 +323,7 @@ begin
       )::integer
     end;
 
-  -- Apply the cap before converting to integer, avoiding overflow.
+  -- Apply the cap before converting to integer.
   v_score := least(
     500::numeric,
     greatest(
@@ -197,7 +332,7 @@ begin
     )
   )::integer;
 
-  -- Lock the selected track row while applying this round's score.
+  -- Lock the selected active track while applying this round's score.
   select s.track_id, t.score_step, t.points_per_score_milestone
     into v_track_id, v_score_step, v_points_per_marker
     from public.user_reward_track_selections as s
@@ -310,14 +445,13 @@ begin
     into v_final_points;
   end if;
 
-  -- Save the resulting point balance with the round so a retry returns the
-  -- same response even if the user later changes tracks or earns more points.
+  -- Save the resulting balance so retries return the original result.
   update public.typing_sprint_rounds
      set reward_points = v_final_points
    where user_id = v_user_id
      and request_id = p_request_id;
 
-  return jsonb_build_object(
+  return pg_catalog.jsonb_build_object(
     'requestId', p_request_id,
     'wpm', v_wpm,
     'accuracy', v_accuracy,
