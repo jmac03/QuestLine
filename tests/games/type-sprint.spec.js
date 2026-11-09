@@ -120,6 +120,7 @@ test.describe('Type Sprint game', () => {
     expect(call.args.p_typed_text).toBe(prompt);
     expect(call.args.p_duration_seconds).toBe(30);
     expect(call.args.p_prompt_pack).toBe('sentences');
+    expect(call.args.p_client_score).toBeGreaterThanOrEqual(0);
 
     const savedRun = await page.evaluate(() => JSON.parse(localStorage.getItem('questline-type-sprint-latest-run')));
     expect(savedRun.submittedUserId).toBe('11111111-1111-4111-8111-111111111111');

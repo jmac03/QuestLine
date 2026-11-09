@@ -62,6 +62,7 @@ async function syncLatestRun(user = activeUser) {
   const run = readLatestRun();
   if (!user || !supabaseClient || !run || run.submittedUserId === user.id) return;
 
+  const recordScore = getSavedRunScore(run);
   const { data, error } = await supabaseClient.rpc('complete_typing_round', {
     p_request_id: run.requestId,
     p_duration_seconds: run.durationSeconds,
@@ -69,6 +70,7 @@ async function syncLatestRun(user = activeUser) {
     p_prompt: run.prompt,
     p_typed_text: run.typedText,
     p_elapsed_ms: run.elapsedMs,
+    p_client_score: recordScore,
   });
 
   if (error) {
@@ -156,6 +158,27 @@ function getWpm() {
   return Math.round(standardWords / elapsedMinutes);
 }
 
+// Older locally saved runs do not have a score. Reconstruct a safe score for
+// those runs so the new seven-argument RPC can still accept them.
+function getSavedRunScore(run) {
+  if (Number.isFinite(Number(run.score))) return Math.max(0, Number(run.score));
+
+  const typedText = String(run.typedText || '');
+  const promptText = String(run.prompt || '');
+  const elapsedMinutes = Math.max(1 / 60, Number(run.elapsedMs || 0) / 60000);
+  const speed = Math.round((typedText.length / standardWordLength) / elapsedMinutes);
+  let correctCharacters = 0;
+
+  [...typedText].forEach((character, index) => {
+    if (character === promptText[index]) correctCharacters += 1;
+  });
+
+  const accuracy = typedText.length
+    ? Math.round((correctCharacters / typedText.length) * 100)
+    : 100;
+  return Math.max(0, Math.round(speed * accuracy / 100));
+}
+
 function updateStats() {
   document.querySelector('#accuracy-value').textContent = getAccuracy();
   document.querySelector('#wpm-value').textContent = getWpm();
@@ -196,6 +219,7 @@ function finishRound() {
     prompt,
     typedText: typingInput.value,
     elapsedMs: startedAt ? Math.max(1, Date.now() - startedAt) : 0,
+    score,
     submittedUserId: null,
     createdAt: new Date().toISOString(),
   });
