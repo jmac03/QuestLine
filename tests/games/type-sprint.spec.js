@@ -74,17 +74,17 @@ test.describe('Type Sprint game', () => {
     await expect(page.locator('#result-mistakes')).toHaveText('1');
   });
 
-  test('persists the best WPM locally and preserves it when a later run is slower', async ({ page }) => {
+  test('persists the best score locally and preserves it when a later run is lower', async ({ page }) => {
     await openPage(page, '/typing.html', { authenticated: false });
-    await page.evaluate(() => localStorage.setItem('questline-type-sprint-best', '999'));
+    await page.evaluate(() => localStorage.setItem('questline-type-sprint-best-score', '999'));
     await page.reload();
-    await expect(page.locator('#best-wpm')).toHaveText('999');
+    await expect(page.locator('#best-score')).toHaveText('999');
     await page.locator('#start-button').click();
     const prompt = await page.locator('#typing-prompt').innerText();
     await page.locator('#typing-input').fill(prompt);
-    await expect(page.locator('#best-wpm')).toHaveText('999');
+    await expect(page.locator('#best-score')).toHaveText('999');
     await page.reload();
-    await expect(page.locator('#best-wpm')).toHaveText('999');
+    await expect(page.locator('#best-score')).toHaveText('999');
   });
 
   test('saves the latest run locally for a guest and overwrites it on the next run', async ({ page }) => {
@@ -120,10 +120,12 @@ test.describe('Type Sprint game', () => {
     expect(call.args.p_typed_text).toBe(prompt);
     expect(call.args.p_duration_seconds).toBe(30);
     expect(call.args.p_prompt_pack).toBe('sentences');
-    expect(call.args.p_client_score).toBeGreaterThanOrEqual(0);
+    expect(call.args.p_mistakes).toBe(0);
 
     const savedRun = await page.evaluate(() => JSON.parse(localStorage.getItem('questline-type-sprint-latest-run')));
     expect(savedRun.submittedUserId).toBe('11111111-1111-4111-8111-111111111111');
+    expect(savedRun.score).toBe(42);
     expect(savedRun.serverResult.wpm).toBe(42);
+    await expect(page.locator('#result-score')).toHaveText('42');
   });
 });

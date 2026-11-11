@@ -203,6 +203,7 @@ if (!configured) {
       p_prompt: 'abc',
       p_typed_text: 'abc',
       p_elapsed_ms: 60000,
+      p_mistakes: 0,
     });
 
     assert.equal(result.response.ok, true, JSON.stringify(result.body));
@@ -212,6 +213,7 @@ if (!configured) {
     assert.equal(result.body.accuracy, 100);
     assert.equal(result.body.wpm, 1);
     assert.equal(result.body.score, 1);
+    assert.equal(result.body.mistakes, 0);
 
     const saved = await request(
       `/rest/v1/typing_sprint_rounds?request_id=eq.${requestId}&select=*`,
@@ -228,6 +230,7 @@ if (!configured) {
       p_prompt: 'abc',
       p_typed_text: 'abc',
       p_elapsed_ms: 60000,
+      p_mistakes: 0,
     });
     assert.equal(retry.response.ok, true, JSON.stringify(retry.body));
     assert.deepEqual(retry.body, result.body);

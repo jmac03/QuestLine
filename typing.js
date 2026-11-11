@@ -22,7 +22,9 @@ const prompts = {
 
 const settings = { duration: 30, pack: 'sentences', mode: 'solo', ghostWpm: 45 };
 const standardWordLength = 5;
-const bestKey = 'questline-type-sprint-best';
+// Keep score records separate from the legacy WPM record so old WPM values
+// cannot appear as a score after the scoring model changes.
+const bestKey = 'questline-type-sprint-best-score';
 const latestRunKey = 'questline-type-sprint-latest-run';
 const supabaseClient = window.questLineSupabase;
 const settingsPanel = document.querySelector('#settings-panel');
@@ -62,7 +64,9 @@ async function syncLatestRun(user = activeUser) {
   const run = readLatestRun();
   if (!user || !supabaseClient || !run || run.submittedUserId === user.id) return;
 
-  const recordScore = getSavedRunScore(run);
+  const recordedMistakes = Number.isFinite(Number(run.mistakes))
+    ? Math.max(0, Number(run.mistakes))
+    : 0;
   const { data, error } = await supabaseClient.rpc('complete_typing_round', {
     p_request_id: run.requestId,
     p_duration_seconds: run.durationSeconds,
@@ -70,7 +74,7 @@ async function syncLatestRun(user = activeUser) {
     p_prompt: run.prompt,
     p_typed_text: run.typedText,
     p_elapsed_ms: run.elapsedMs,
-    p_client_score: recordScore,
+    p_mistakes: recordedMistakes,
   });
 
   if (error) {
@@ -80,11 +84,25 @@ async function syncLatestRun(user = activeUser) {
 
   // Keep the run locally until the next run replaces it, but mark it as safely
   // assigned so a later account on the same browser cannot receive it too.
-  saveLatestRun({ ...run, submittedUserId: user.id, serverResult: data || null });
-  if (data?.wpm != null) {
-    const best = Math.max(Number(data.wpm) || 0, Number(localStorage.getItem(bestKey) || 0));
+  const serverScore = Number.isFinite(Number(data?.score))
+    ? Math.max(0, Number(data.score))
+    : null;
+  saveLatestRun({
+    ...run,
+    ...(serverScore == null ? {} : { score: serverScore }),
+    submittedUserId: user.id,
+    serverResult: data || null,
+  });
+
+  if (serverScore != null) {
+    document.querySelector('#result-score').textContent = serverScore;
+    document.querySelector('#result-summary').textContent = `You typed ${run.typedText.length} characters at ${data.wpm} WPM with ${data.accuracy}% accuracy, ${run.mistakes || 0} mistakes, and a record score of ${serverScore}.`;
+  }
+
+  if (data?.score != null) {
+    const best = Math.max(serverScore || 0, Number(localStorage.getItem(bestKey) || 0));
     localStorage.setItem(bestKey, String(best));
-    document.querySelector('#best-wpm').textContent = best;
+    document.querySelector('#best-score').textContent = best;
   }
 }
 
@@ -158,27 +176,6 @@ function getWpm() {
   return Math.round(standardWords / elapsedMinutes);
 }
 
-// Older locally saved runs do not have a score. Reconstruct a safe score for
-// those runs so the new seven-argument RPC can still accept them.
-function getSavedRunScore(run) {
-  if (Number.isFinite(Number(run.score))) return Math.max(0, Number(run.score));
-
-  const typedText = String(run.typedText || '');
-  const promptText = String(run.prompt || '');
-  const elapsedMinutes = Math.max(1 / 60, Number(run.elapsedMs || 0) / 60000);
-  const speed = Math.round((typedText.length / standardWordLength) / elapsedMinutes);
-  let correctCharacters = 0;
-
-  [...typedText].forEach((character, index) => {
-    if (character === promptText[index]) correctCharacters += 1;
-  });
-
-  const accuracy = typedText.length
-    ? Math.round((correctCharacters / typedText.length) * 100)
-    : 100;
-  return Math.max(0, Math.round(speed * accuracy / 100));
-}
-
 function updateStats() {
   document.querySelector('#accuracy-value').textContent = getAccuracy();
   document.querySelector('#wpm-value').textContent = getWpm();
@@ -219,12 +216,13 @@ function finishRound() {
     prompt,
     typedText: typingInput.value,
     elapsedMs: startedAt ? Math.max(1, Date.now() - startedAt) : 0,
+    mistakes: mistakeCount,
     score,
     submittedUserId: null,
     createdAt: new Date().toISOString(),
   });
   void syncLatestRun();
-  document.querySelector('#best-wpm').textContent = best;
+  document.querySelector('#best-score').textContent = best;
   document.querySelector('#result-wpm').textContent = speed;
   document.querySelector('#result-accuracy').textContent = accuracy;
   document.querySelector('#result-score').textContent = score;
@@ -278,7 +276,7 @@ function startRound() {
 }
 
 function showBestScore() {
-  document.querySelector('#best-wpm').textContent = localStorage.getItem(bestKey) || '—';
+  document.querySelector('#best-score').textContent = localStorage.getItem(bestKey) || '0';
 }
 
 document.querySelectorAll('.choice-button').forEach((button) => {

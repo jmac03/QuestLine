@@ -46,6 +46,7 @@ export const mockSupabase = ({ authenticated = true, energy = 3, rewardPoints = 
             wpm: 42,
             accuracy: 100,
             score: 42,
+            mistakes: args.p_mistakes,
             typedCharacters: args.p_typed_text.length,
             correctCharacters: args.p_typed_text.length,
             rewardTrackId: track.id,
