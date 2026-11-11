@@ -53,6 +53,9 @@ export const mockSupabase = ({ authenticated = true, energy = 3, rewardPoints = 
             rewardPoints: rewardPoints,
           }, error: null };
         }
+        if (name === 'get_wordle_state') return { data: { activeGame: null }, error: null };
+        if (name === 'start_wordle_game') return { data: { id: '55555555-5555-4555-8555-555555555555', wordLength: args.p_word_length, maxGuesses: args.p_max_guesses, guesses: [] }, error: null };
+        if (name === 'submit_wordle_guess') return { data: { guess: args.p_guess, feedback: [...args.p_guess].map((letter, index) => ({ letter, status: index === 0 ? 'correct' : 'absent' })), won: true, lost: false, score: 160, answer: args.p_guess, guessesUsed: 1, maxGuesses: 6 }, error: null };
         return { data: null, error: null };
       },
       functions: { invoke: async (name, options) => { window.__mockCalls.push({ type: 'function', name, options }); return { data: { grant_id: '44444444-4444-4444-8444-444444444444', song_id: 'big-waves' }, error: null }; } },
