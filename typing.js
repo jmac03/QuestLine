@@ -22,6 +22,8 @@ const prompts = {
 
 const settings = { duration: 30, pack: 'sentences', mode: 'solo', ghostWpm: 45 };
 const standardWordLength = 5;
+// Temporary diagnostics: set to false to hide this entire readout later.
+const rewardProgressDebugEnabled = true;
 // Keep score records separate from the legacy WPM record so old WPM values
 // cannot appear as a score after the scoring model changes.
 const bestKey = 'questline-type-sprint-best-score';
@@ -36,6 +38,14 @@ const playerProgress = document.querySelector('#player-progress');
 const ghostProgress = document.querySelector('#ghost-progress');
 const ghostSpeedSetting = document.querySelector('#ghost-speed-setting');
 const ghostSpeedNote = document.querySelector('#ghost-speed-note');
+const rewardProgressDebug = document.querySelector('#reward-progress-debug');
+const rewardProgressDebugStatus = document.querySelector('#reward-progress-debug-status');
+const rewardDebugTrack = document.querySelector('#reward-debug-track');
+const rewardDebugPoints = document.querySelector('#reward-debug-points');
+const rewardDebugScore = document.querySelector('#reward-debug-score');
+const rewardDebugProgressBar = document.querySelector('#reward-debug-progress-bar');
+const rewardDebugProgress = document.querySelector('.typing-debug-progress');
+const rewardDebugProgressLabel = document.querySelector('#reward-debug-progress-label');
 
 let prompt = '';
 let startedAt = 0;
@@ -58,6 +68,70 @@ function readLatestRun() {
 
 function saveLatestRun(run) {
   localStorage.setItem(latestRunKey, JSON.stringify(run));
+}
+
+function resetRewardProgressDebug(message = 'Sign in and select a reward track to inspect the combined score from both games.') {
+  if (!rewardProgressDebug) return;
+  rewardProgressDebug.hidden = !rewardProgressDebugEnabled;
+  if (!rewardProgressDebugEnabled) return;
+  rewardProgressDebugStatus.textContent = message;
+  rewardDebugTrack.textContent = '—';
+  rewardDebugPoints.textContent = '0';
+  rewardDebugScore.textContent = '0 / 0';
+  rewardDebugProgressBar.style.width = '0%';
+  rewardDebugProgress.setAttribute('aria-valuenow', '0');
+  rewardDebugProgressLabel.textContent = '0%';
+}
+
+async function loadRewardProgressDebug(user = activeUser) {
+  if (!rewardProgressDebugEnabled || !rewardProgressDebug || !user || !supabaseClient) {
+    if (rewardProgressDebug) rewardProgressDebug.hidden = true;
+    return;
+  }
+
+  rewardProgressDebug.hidden = false;
+  rewardProgressDebugStatus.textContent = 'Loading reward-track progress…';
+
+  try {
+    const [selectionResult, tracksResult, progressResult] = await Promise.all([
+      supabaseClient.from('user_reward_track_selections')
+        .select('track_id')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      supabaseClient.from('reward_tracks')
+        .select('id, name, score_step, points_per_score_milestone')
+        .eq('is_active', true),
+      supabaseClient.from('user_reward_track_progress')
+        .select('track_id, points, score_remainder')
+        .eq('user_id', user.id),
+    ]);
+
+    for (const result of [selectionResult, tracksResult, progressResult]) {
+      if (result.error) throw result.error;
+    }
+
+    const selectedTrackId = selectionResult.data?.track_id;
+    const track = (tracksResult.data || []).find((item) => item.id === selectedTrackId);
+    if (!track) {
+      resetRewardProgressDebug('No active reward track is selected for this account.');
+      return;
+    }
+
+    const progress = (progressResult.data || []).find((item) => item.track_id === track.id) || {};
+    const scoreStep = Math.max(0, Number(track.score_step) || 0);
+    const scoreRemainder = Math.max(0, Number(progress.score_remainder) || 0);
+    const percent = scoreStep ? Math.min(100, Math.round(scoreRemainder / scoreStep * 100)) : 0;
+
+    rewardProgressDebugStatus.textContent = 'Combined Number Roll + Type Sprint score after completed rounds.';
+    rewardDebugTrack.textContent = track.name || 'Selected track';
+    rewardDebugPoints.textContent = (Number(progress.points) || 0).toLocaleString();
+    rewardDebugScore.textContent = `${scoreRemainder.toLocaleString()} / ${scoreStep.toLocaleString()}`;
+    rewardDebugProgressBar.style.width = `${percent}%`;
+    rewardDebugProgress.setAttribute('aria-valuenow', String(percent));
+    rewardDebugProgressLabel.textContent = `${percent}% toward the next reward-track point`;
+  } catch (error) {
+    resetRewardProgressDebug(`Could not load debug progress: ${error.message || 'unknown error'}`);
+  }
 }
 
 async function syncLatestRun(user = activeUser) {
@@ -98,6 +172,8 @@ async function syncLatestRun(user = activeUser) {
     document.querySelector('#result-score').textContent = serverScore;
     document.querySelector('#result-summary').textContent = `You typed ${run.typedText.length} characters at ${data.wpm} WPM with ${data.accuracy}% accuracy, ${run.mistakes || 0} mistakes, and a record score of ${serverScore}.`;
   }
+
+  void loadRewardProgressDebug(user);
 
   if (data?.score != null) {
     const best = Math.max(serverScore || 0, Number(localStorage.getItem(bestKey) || 0));
@@ -335,13 +411,17 @@ updateGhostDescription();
 if (supabaseClient) {
   supabaseClient.auth.onAuthStateChange((_event, session) => {
     activeUser = session?.user || null;
+    if (!activeUser) resetRewardProgressDebug();
     void syncLatestRun(activeUser);
+    void loadRewardProgressDebug(activeUser);
   });
 
   supabaseClient.auth.getSession()
     .then(({ data }) => {
       activeUser = data.session?.user || null;
+      if (!activeUser) resetRewardProgressDebug();
       void syncLatestRun(activeUser);
+      void loadRewardProgressDebug(activeUser);
     })
     .catch((error) => console.warn('Could not restore the Type Sprint session.', error));
 }

@@ -21,6 +21,16 @@
 .stat-heading { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .67rem; letter-spacing: .04em; text-transform: uppercase; }
 .stat-value { color: var(--ink); font-family: var(--serif); font-size: 2.8rem; font-weight: 400; letter-spacing: -.06em; line-height: 1; }
 .stat-caption { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .62rem; text-transform: uppercase; }
+.roll-debug-panel { margin-top: 16px; padding: 20px 24px; border: 1px dashed var(--blue); background: #f2f6f5; }
+.roll-debug-panel h2 { margin: 3px 0 8px; font-size: 1.25rem; }
+.roll-debug-panel p { margin: 0; }
+.roll-debug-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 18px 0 12px; }
+.roll-debug-grid div { display: grid; gap: 4px; }
+.roll-debug-grid span, .roll-debug-caption { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .65rem; text-transform: uppercase; }
+.roll-debug-grid strong { font-size: 1rem; font-weight: 600; }
+.roll-debug-progress { height: 8px; overflow: hidden; background: var(--paper); }
+.roll-debug-progress span { display: block; width: 0; height: 100%; background: var(--blue); transition: width .25s ease; }
+.roll-debug-caption { margin-top: 8px !important; }
 .energy-track { height: 11px; overflow: hidden; background: var(--paper); }
 .energy-fill { display: block; width: 0; height: 100%; background: var(--blue); }
 .energy-card[data-level="low"] .energy-fill { background: #d89b4a; }
@@ -68,6 +78,7 @@
   .roll-heading { align-items: start; flex-direction: column; margin: 45px 0 27px; }
   .player-badge { align-self: flex-start; }
   .roll-stats { grid-template-columns: 1fr 1fr; }
+  .roll-debug-grid { grid-template-columns: 1fr; gap: 10px; }
   .energy-card { grid-column: 1 / -1; }
   .stat-card { min-height: 118px; padding: 17px; }
   .roll-content { grid-template-columns: 1fr; }

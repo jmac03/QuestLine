@@ -151,6 +151,7 @@ h1, h2 { margin-bottom: 0; font-size: clamp(3rem, 7vw, 6.5rem); font-weight: 500
 .profile-page input { padding: 12px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; }
 .profile-page .auth-submit { margin-top: 10px; }
 .profile-page .account-music-setting { margin: 8px 0; }
+.profile-page .account-music-setting input[type="range"] { width: 100%; padding: 0; accent-color: var(--ink); }
 .profile-loading { min-height: 1.2em; color: var(--muted); font-size: .8rem; }
 .account-label { margin: 0; }
 .sign-out-button { margin-top: 0; }

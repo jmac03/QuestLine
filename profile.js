@@ -7,6 +7,8 @@ const signInButton = document.querySelector('#profile-sign-in');
 const message = document.querySelector('#profile-message');
 const accountMessage = document.querySelector('#account-message');
 const accountEmail = document.querySelector('#profile-account-email');
+const masterVolume = document.querySelector('#master-volume');
+const masterVolumeValue = document.querySelector('#master-volume-value');
 const defaultSongSelect = document.querySelector('#default-song-select');
 const resetSongsButton = document.querySelector('#reset-songs-button');
 const signOutButton = document.querySelector('#sign-out-button');
@@ -34,6 +36,7 @@ function renderAccount(user) {
   accountView.hidden = !activeUser;
   accountEmail.textContent = activeUser?.email || activeUser?.user_metadata?.email || '';
   defaultSongSelect.disabled = !activeUser || !musicReady;
+  masterVolume.disabled = !activeUser || !musicReady;
   resetSongsButton.disabled = !activeUser;
   signOutButton.disabled = !activeUser;
   if (musicPlayer) musicPlayer.hidden = !activeUser;
@@ -53,6 +56,29 @@ function renderSongs(songs = window.questLineMusic?.getAvailableSongs?.() || [])
   defaultSongSelect.value = current;
   defaultSongSelect.disabled = !musicReady;
 }
+
+function renderMasterVolume(value = window.questLineMusic?.getMasterVolume?.() ?? 1) {
+  const normalized = Math.min(1, Math.max(0, Number(value)));
+  masterVolume.value = String(Number.isFinite(normalized) ? normalized : 1);
+  masterVolumeValue.textContent = `${Math.round(Number(masterVolume.value) * 100)}%`;
+  masterVolume.disabled = !activeUser || !musicReady;
+}
+
+masterVolume.addEventListener('input', () => {
+  masterVolumeValue.textContent = `${Math.round(Number(masterVolume.value) * 100)}%`;
+});
+
+masterVolume.addEventListener('change', async () => {
+  if (!activeUser) return;
+  masterVolume.disabled = true;
+  try {
+    await window.questLineMusic.setMasterVolume(masterVolume.value);
+    setMessage(accountMessage, 'Master volume saved.');
+  } catch (error) {
+    setMessage(accountMessage, error.message || 'Could not save that preference.', true);
+    renderMasterVolume();
+  } finally { masterVolume.disabled = !activeUser || !musicReady; }
+});
 
 defaultSongSelect.addEventListener('change', async () => {
   if (!activeUser) return;
@@ -107,6 +133,7 @@ signOutButton.addEventListener('click', async () => {
 window.addEventListener('questline:music-ready', (event) => {
   musicReady = true;
   renderSongs(event.detail?.songs || []);
+  renderMasterVolume(event.detail?.masterVolume);
 });
 
 // site-ui.js can finish loading the catalog before this script is evaluated.
@@ -114,6 +141,7 @@ window.addEventListener('questline:music-ready', (event) => {
 if (window.questLineMusicReady) {
   musicReady = true;
   renderSongs(window.questLineMusic?.getAvailableSongs?.() || []);
+  renderMasterVolume();
 }
 
 if (supabaseClient) {

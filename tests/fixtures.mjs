@@ -5,7 +5,7 @@ export const milestone = { id: '33333333-3333-4333-8333-333333333333', track_id:
 export const mockSupabase = ({ authenticated = true, energy = 3, rewardPoints = 10, rollError = null, ownedSongId = null } = {}) => `
   (() => {
     const user = ${JSON.stringify(authenticated ? user : null)};
-    const track = ${JSON.stringify(track)};
+    const track = ${JSON.stringify({ ...track, score_step: 1000, points_per_score_milestone: 1 })};
     const milestone = ${JSON.stringify(milestone)};
     const state = { currentEnergy: ${energy}, maxEnergy: 10, totalScore: 120, bestScore: 80, canRoll: ${energy > 0}, recentRolls: [{ roll_value: 17, score_gain: 5, rarity: 'Common', badges: ['close_to_average'] }] };
     let rewardPoints = Number(localStorage.getItem('questline-test-reward-points') || ${rewardPoints});
@@ -18,7 +18,7 @@ export const mockSupabase = ({ authenticated = true, energy = 3, rewardPoints = 
       onAuthStateChange: (callback) => { window.__authCallback = callback; return { data: { subscription: { unsubscribe() {} } } }; },
     };
     const query = (table) => {
-      const result = table === 'reward_tracks' ? [track] : table === 'reward_track_milestones' ? [milestone] : table === 'user_reward_track_progress' ? [{ track_id: track.id, points: rewardPoints }] : table === 'user_reward_track_selections' ? [{ track_id: track.id }] : table === 'user_reward_grants' && ${JSON.stringify(ownedSongId)} ? [{ reward_payload: { type: 'song', song_id: ${JSON.stringify(ownedSongId)} } }] : [];
+      const result = table === 'reward_tracks' ? [track] : table === 'reward_track_milestones' ? [milestone] : table === 'user_reward_track_progress' ? [{ track_id: track.id, points: rewardPoints, score_remainder: 420 }] : table === 'user_reward_track_selections' ? [{ track_id: track.id }] : table === 'user_reward_grants' && ${JSON.stringify(ownedSongId)} ? [{ reward_payload: { type: 'song', song_id: ${JSON.stringify(ownedSongId)} } }] : [];
       const builder = { select: () => builder, eq: () => builder, order: () => builder, maybeSingle: async () => ({ data: result[0] || null, error: null }), then: (resolve) => resolve({ data: result, error: null }) };
       return builder;
     };

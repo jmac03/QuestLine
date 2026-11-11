@@ -7,6 +7,7 @@ test.describe('Profile page', () => {
     await expect(page.locator('#profile-account')).toBeVisible();
     await expect(page.locator('#profile-account-email')).toHaveText('tester@example.com');
     await expect(page.locator('#default-song-select')).toBeVisible();
+    await expect(page.locator('#master-volume')).toBeVisible();
   });
 
   test('redirects signed-out users to authentication', async ({ page }) => {

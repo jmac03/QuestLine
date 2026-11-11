@@ -23,6 +23,7 @@
         </form></div>
         <div id="profile-account" hidden>
           <p class="account-label">Signed in as</p><p class="account-email" id="profile-account-email"></p>
+          <div class="account-music-setting"><label for="master-volume">Master volume</label><input id="master-volume" type="range" min="0" max="1" step="0.01" value="1" aria-label="Master volume"><output id="master-volume-value" for="master-volume">100%</output><small>Scales the volume of music on every page.</small></div>
           <div class="account-music-setting"><label for="default-song-select">Default song</label><select id="default-song-select" disabled><option value="">Use each page's built-in song</option></select><small>Used whenever a page does not have its own song selection.</small></div>
           <button class="auth-submit" id="reset-songs-button" type="button">Reset all songs to default</button><button class="auth-submit sign-out-button" id="sign-out-button" type="button">Sign out</button>
           <p class="auth-message" id="account-message" role="status" aria-live="polite"></p>

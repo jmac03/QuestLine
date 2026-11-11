@@ -69,6 +69,21 @@
           </article>
         </div>
 
+        <aside class="roll-debug-panel" id="reward-progress-debug" hidden aria-label="Reward track debug information">
+          <p class="eyebrow">Debug / Reward track</p>
+          <h2>How close is this game?</h2>
+          <p id="reward-progress-debug-status">Sign in and select a reward track to inspect the combined score from both games.</p>
+          <div class="roll-debug-grid">
+            <div><span>Selected track</span><strong id="reward-debug-track">—</strong></div>
+            <div><span>Reward points</span><strong id="reward-debug-points">0</strong></div>
+            <div><span>Combined score toward next point</span><strong id="reward-debug-score">0 / 0</strong></div>
+          </div>
+          <div class="roll-debug-progress" role="progressbar" aria-label="Combined Number Roll and Type Sprint score toward next reward-track point" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <span id="reward-debug-progress-bar"></span>
+          </div>
+          <p class="roll-debug-caption" id="reward-debug-progress-label">0%</p>
+        </aside>
+
         <div class="roll-content">
           <section class="roll-panel" aria-label="Roll a number">
             <p class="eyebrow">Your latest number</p>

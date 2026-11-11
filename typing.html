@@ -42,6 +42,21 @@
         </div>
       </section>
 
+      <aside class="typing-debug-panel" id="reward-progress-debug" hidden aria-label="Reward track debug information">
+        <p class="eyebrow">Debug / Reward track</p>
+        <h2>How close is this game?</h2>
+        <p id="reward-progress-debug-status">Sign in and select a reward track to inspect the combined score from both games.</p>
+        <div class="typing-debug-grid">
+          <div><span>Selected track</span><strong id="reward-debug-track">—</strong></div>
+          <div><span>Reward points</span><strong id="reward-debug-points">0</strong></div>
+          <div><span>Combined score toward next point</span><strong id="reward-debug-score">0 / 0</strong></div>
+        </div>
+        <div class="typing-debug-progress" role="progressbar" aria-label="Combined Number Roll and Type Sprint score toward next reward-track point" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <span id="reward-debug-progress-bar"></span>
+        </div>
+        <p class="typing-debug-caption" id="reward-debug-progress-label">0%</p>
+      </aside>
+
       <section class="typing-shell" aria-label="Type Sprint game">
         <div class="settings-panel" id="settings-panel">
           <div class="panel-heading">

@@ -13,14 +13,18 @@ const localSongCatalog = Object.freeze([
 ]);
 const catalogById = new Map(localSongCatalog.map((song) => [song.id, song]));
 let currentUser = null;
-let cachedPreferences = { defaultSongId: null, pages: {} };
+let cachedPreferences = { defaultSongId: null, pages: {}, masterVolume: 1 };
 
 function normalizeSongId(value) {
   if (typeof value !== 'string') return null;
   const id = value.trim();
   return catalogById.has(id) ? id : null;
 }
-function emptyPreferences() { return { defaultSongId: null, pages: {} }; }
+function normalizeVolume(value) {
+  const volume = Number(value);
+  return Number.isFinite(volume) ? Math.min(1, Math.max(0, volume)) : 1;
+}
+function emptyPreferences() { return { defaultSongId: null, pages: {}, masterVolume: 1 }; }
 function readLocalPreferences(userId) {
   try {
     const value = JSON.parse(localStorage.getItem(`${musicPreferencePrefix}${userId || 'guest'}`) || '{}');
@@ -28,6 +32,7 @@ function readLocalPreferences(userId) {
     return {
       defaultSongId: normalizeSongId(value?.defaultSongId),
       pages: Object.fromEntries(Object.entries(pages).map(([page, id]) => [page, normalizeSongId(id)]).filter(([, id]) => id)),
+      masterVolume: normalizeVolume(value?.masterVolume),
     };
   } catch { return emptyPreferences(); }
 }
@@ -73,6 +78,7 @@ async function persistPreference(pageKey, songId) {
   const nextPreferences = {
     defaultSongId: cachedPreferences.defaultSongId,
     pages: { ...cachedPreferences.pages },
+    masterVolume: cachedPreferences.masterVolume,
   };
   if (normalizedPage === profilePreferencePage) nextPreferences.defaultSongId = normalizedSong;
   else if (normalizedSong) nextPreferences.pages[normalizedPage] = normalizedSong;
@@ -88,11 +94,17 @@ window.questLineSongs = {
     if (!song) throw new Error('That song is not among your earned rewards.');
     return song;
   },
-  getPreferences: () => ({ defaultSongId: cachedPreferences.defaultSongId, pages: { ...cachedPreferences.pages } }),
+  getPreferences: () => ({ defaultSongId: cachedPreferences.defaultSongId, pages: { ...cachedPreferences.pages }, masterVolume: cachedPreferences.masterVolume }),
   loadPreferences, setPageSong: persistPreference,
   setDefaultSong: (id) => {
     if (!currentUser) return Promise.reject(new Error('Sign in to update your music preference.'));
     return persistPreference(profilePreferencePage, id);
+  },
+  setMasterVolume: (value) => {
+    if (!currentUser) return Promise.reject(new Error('Sign in to update your volume preference.'));
+    cachedPreferences = { ...cachedPreferences, masterVolume: normalizeVolume(value) };
+    writeLocalPreferences(currentUser.id, cachedPreferences);
+    return Promise.resolve(cachedPreferences);
   },
   resetPageSongs: async () => { for (const page of Object.keys(cachedPreferences.pages)) await persistPreference(page, null); return cachedPreferences; },
   resetAllPreferences: async () => {

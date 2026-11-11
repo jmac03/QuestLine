@@ -19,12 +19,77 @@ const rollStatus = document.querySelector('#roll-status');
 const historyList = document.querySelector('#history-list');
 const gameError = document.querySelector('#game-error');
 const themeStatus = document.querySelector('#theme-status');
+const rewardProgressDebugEnabled = true;
+const rewardProgressDebug = document.querySelector('#reward-progress-debug');
+const rewardProgressDebugStatus = document.querySelector('#reward-progress-debug-status');
+const rewardDebugTrack = document.querySelector('#reward-debug-track');
+const rewardDebugPoints = document.querySelector('#reward-debug-points');
+const rewardDebugScore = document.querySelector('#reward-debug-score');
+const rewardDebugProgressBar = document.querySelector('#reward-debug-progress-bar');
+const rewardDebugProgress = document.querySelector('.roll-debug-progress');
+const rewardDebugProgressLabel = document.querySelector('#reward-debug-progress-label');
 
 let rollUser = null;
 let currentState = null;
 let requestInProgress = false;
 let stateRequestInProgress = false;
 let themeRequestId = 0;
+
+function resetRewardProgressDebug(message = 'Sign in and select a reward track to inspect the combined score from both games.') {
+  if (!rewardProgressDebug) return;
+  rewardProgressDebug.hidden = !rewardProgressDebugEnabled;
+  if (!rewardProgressDebugEnabled) return;
+  rewardProgressDebugStatus.textContent = message;
+  rewardDebugTrack.textContent = '—';
+  rewardDebugPoints.textContent = '0';
+  rewardDebugScore.textContent = '0 / 0';
+  rewardDebugProgressBar.style.width = '0%';
+  rewardDebugProgress.setAttribute('aria-valuenow', '0');
+  rewardDebugProgressLabel.textContent = '0%';
+}
+
+async function loadRewardProgressDebug(user) {
+  if (!rewardProgressDebugEnabled || !rewardProgressDebug || !user || !supabaseClient) {
+    if (rewardProgressDebug) rewardProgressDebug.hidden = true;
+    return;
+  }
+
+  rewardProgressDebug.hidden = false;
+  rewardProgressDebugStatus.textContent = 'Loading reward-track progress…';
+  try {
+    const [selectionResult, tracksResult, progressResult] = await Promise.all([
+      supabaseClient.from('user_reward_track_selections').select('track_id').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('reward_tracks').select('id, name, score_step, points_per_score_milestone').eq('is_active', true),
+      supabaseClient.from('user_reward_track_progress').select('track_id, points, score_remainder').eq('user_id', user.id),
+    ]);
+
+    for (const result of [selectionResult, tracksResult, progressResult]) {
+      if (result.error) throw result.error;
+    }
+
+    const selectedTrackId = selectionResult.data?.track_id;
+    const track = (tracksResult.data || []).find((item) => item.id === selectedTrackId);
+    if (!track) {
+      resetRewardProgressDebug('No active reward track is selected for this account.');
+      return;
+    }
+
+    const progress = (progressResult.data || []).find((item) => item.track_id === track.id) || {};
+    const scoreStep = Math.max(0, Number(track.score_step) || 0);
+    const scoreRemainder = Math.max(0, Number(progress.score_remainder) || 0);
+    const percent = scoreStep ? Math.min(100, Math.round(scoreRemainder / scoreStep * 100)) : 0;
+
+    rewardProgressDebugStatus.textContent = 'Combined Number Roll + Type Sprint score after completed rolls.';
+    rewardDebugTrack.textContent = track.name || 'Selected track';
+    rewardDebugPoints.textContent = (Number(progress.points) || 0).toLocaleString();
+    rewardDebugScore.textContent = `${scoreRemainder.toLocaleString()} / ${scoreStep.toLocaleString()}`;
+    rewardDebugProgressBar.style.width = `${percent}%`;
+    rewardDebugProgress.setAttribute('aria-valuenow', String(percent));
+    rewardDebugProgressLabel.textContent = `${percent}% toward the next reward-track point`;
+  } catch (error) {
+    resetRewardProgressDebug(`Could not load debug progress: ${getErrorMessage(error)}`);
+  }
+}
 
 function setRollStatus(message, isError = false) {
   rollStatus.textContent = message;
@@ -220,6 +285,7 @@ function showLogin() {
 async function showPlayer(user) {
   if (!user) {
     showLogin();
+    resetRewardProgressDebug();
     await loadRewardTheme(null);
     return;
   }
@@ -236,6 +302,7 @@ async function showPlayer(user) {
   }
   await Promise.all([
     loadRewardTheme(user),
+    loadRewardProgressDebug(user),
     isNewUser ? loadRollState() : Promise.resolve(),
   ]);
 }
@@ -295,6 +362,7 @@ rollButton.addEventListener('click', async () => {
     renderState(updatedState);
     renderLatestRoll(data);
     setRollStatus(`You rolled ${data.roll} and earned ${Number(data.scoreGain).toLocaleString()} points.`);
+    void loadRewardProgressDebug(rollUser);
   } catch (error) {
     const message = getErrorMessage(error, 'The roll request could not be completed.');
     setRollStatus(rollSaved ? `Roll saved, but the game could not refresh: ${message}` : message, true);

@@ -49,6 +49,7 @@ function setupMusicPlayer() {
   let currentUser = null;
   let availableSongs = [];
   let currentSong = null;
+  let masterVolume = 1;
   let musicReady = false;
   let songLoadRequest = 0;
 
@@ -94,6 +95,8 @@ function setupMusicPlayer() {
     const request = ++songLoadRequest;
     currentUser = user;
     await window.questLineSongs?.loadPreferences?.(user);
+    masterVolume = window.questLineSongs?.getPreferences?.().masterVolume ?? 1;
+    updateVolume();
     const songs = await (window.questLineSongs?.listAvailable?.() || []);
     if (request !== songLoadRequest) return;
     availableSongs = songs;
@@ -101,13 +104,14 @@ function setupMusicPlayer() {
     playCurrentSong(resolveSong());
     musicReady = true;
     window.questLineMusicReady = true;
-    window.dispatchEvent(new CustomEvent('questline:music-ready', { detail: { songs: availableSongs, user } }));
+    window.dispatchEvent(new CustomEvent('questline:music-ready', { detail: { songs: availableSongs, user, masterVolume } }));
     playMusic();
   }
 
   function updateVolume() {
-    const value = Number(volume.value);
-    audio.volume = value;
+    const value = Math.min(1, Math.max(0, Number(volume.value)));
+    const totalVolume = Math.min(1, Math.max(0, value * masterVolume));
+    audio.volume = Number.isFinite(totalVolume) ? totalVolume : 0;
     volumeValue.textContent = `${Math.round(value * 100)}%`;
     localStorage.setItem('questline-music-volume', String(value));
   }
@@ -171,7 +175,8 @@ function setupMusicPlayer() {
 
   window.questLineMusic = {
     getAvailableSongs: () => [...availableSongs],
-    getPreferences: () => window.questLineSongs?.getPreferences?.() || { defaultSongId: null, pages: {} },
+    getPreferences: () => window.questLineSongs?.getPreferences?.() || { defaultSongId: null, pages: {}, masterVolume: 1 },
+    getMasterVolume: () => masterVolume,
     async setDefaultSong(songId) {
       if (!currentUser) throw new Error('Sign in to update your music preference.');
       if (songId && !availableSongs.some((song) => song.id === songId)) throw new Error('That song is not available to you.');
@@ -183,6 +188,14 @@ function setupMusicPlayer() {
       await window.questLineSongs.resetAllPreferences();
       songSelect.value = '';
       playCurrentSong(resolveSong());
+    },
+    async setMasterVolume(value) {
+      const nextVolume = Math.min(1, Math.max(0, Number(value)));
+      if (!Number.isFinite(nextVolume)) throw new Error('Volume must be a number between 0 and 1.');
+      await window.questLineSongs.setMasterVolume(nextVolume);
+      masterVolume = nextVolume;
+      updateVolume();
+      return nextVolume;
     },
   };
 
