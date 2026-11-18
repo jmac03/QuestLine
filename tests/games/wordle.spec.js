@@ -21,6 +21,16 @@ test.describe('Wordle game', () => {
     await expect(page.locator('#guess-count')).toHaveText('1 / 6');
   });
 
+  test('defaults to five guesses and reflects both selected multipliers', async ({ page }) => {
+    await openPage(page, '/wordle.html');
+    await expect(page.locator('#max-guesses')).toHaveValue('5');
+    await expect(page.locator('#modifier-value')).toHaveText('1.00×');
+    await page.locator('#max-guesses').selectOption('3');
+    await expect(page.locator('#modifier-value')).toHaveText('1.50×');
+    await page.locator('#word-length').selectOption('6');
+    await expect(page.locator('#modifier-value')).toHaveText('1.73×');
+  });
+
   test('shows the score and answer when the last guess completes the game', async ({ page }) => {
     await openPage(page, '/wordle.html');
     await page.locator('#start-button').click();

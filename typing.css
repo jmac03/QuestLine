@@ -2,8 +2,8 @@
 .typing-page { min-height: calc(100vh - 168px); padding: 35px 0 85px; }
 .game-header-note { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .7rem; letter-spacing: .08em; }
 .game-header-note span { color: var(--blue); }
-.typing-heading { display: flex; justify-content: space-between; align-items: end; gap: 30px; margin: 58px 0 38px; }
-.typing-heading h1 { font-size: clamp(3rem, 7vw, 6rem); }
+.typing-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 32px; margin: 58px 0 38px; }
+.typing-heading h1 { font-size: clamp(3rem, 7vw, 6rem); line-height: .92; }
 .typing-heading .eyebrow { margin-bottom: 15px; }
 .game-intro { max-width: 520px; margin: 20px 0 0; color: var(--muted); font-size: .92rem; line-height: 1.6; }
 .personal-best { min-width: 145px; padding-bottom: 5px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: .64rem; text-align: right; text-transform: uppercase; }
@@ -22,6 +22,8 @@
 .typing-debug-caption { margin-top: 8px !important; }
 .settings-panel, .game-panel, .result-panel { min-height: 510px; padding: 35px 42px; }
 .panel-heading, .game-topline, .prompt-label, .game-footer { display: flex; justify-content: space-between; align-items: start; gap: 20px; }
+.panel-heading > div:first-child { min-width: 0; }
+.setup-mark { flex: 0 0 auto; }
 .panel-heading h2, .result-panel h2 { font-size: clamp(2.1rem, 5vw, 3.7rem); }
 .setup-mark { color: var(--blue); font-family: var(--serif); font-size: 3rem; line-height: 1; }
 .setting-group { margin-top: 35px; }

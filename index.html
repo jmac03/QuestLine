@@ -119,8 +119,20 @@
         <label for="auth-password">Password</label>
         <input id="auth-password" name="password" type="password" autocomplete="current-password" required>
         <button class="auth-submit" id="auth-submit" type="submit">Sign in</button>
+        <button class="auth-link" id="forgot-password-button" type="button">Forgot password?</button>
       </form>
       <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
+    </div>
+    <div id="password-reset-view" hidden>
+      <p class="account-label">Choose a new password</p>
+      <form id="password-reset-form">
+        <label for="new-password">New password</label>
+        <input id="new-password" type="password" autocomplete="new-password" minlength="6" required>
+        <label for="confirm-password">Confirm password</label>
+        <input id="confirm-password" type="password" autocomplete="new-password" minlength="6" required>
+        <button class="auth-submit" id="password-reset-submit" type="submit">Update password</button>
+      </form>
+      <p class="auth-message" id="password-reset-message" role="status" aria-live="polite"></p>
     </div>
     <div class="account-view" id="account-view" hidden>
       <p class="account-label">Signed in as</p>

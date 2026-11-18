@@ -1,6 +1,6 @@
 .wordle-page { min-height: calc(100vh - 168px); padding: 35px 0 85px; }
-.wordle-heading { display:flex; justify-content:space-between; align-items:end; gap:30px; margin:55px 0 42px; }
-.wordle-heading h1 { margin-bottom:22px; }
+.wordle-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:32px; margin:55px 0 42px; }
+.wordle-heading h1 { margin-bottom:0; line-height:.92; }
 .wordle-modifier { min-width:150px; padding:18px; border:1px solid var(--line); background:var(--cream); text-align:right; }
 .wordle-modifier span, .wordle-modifier strong { display:block; font-family:'DM Mono',monospace; font-size:.68rem; text-transform:uppercase; }
 .wordle-modifier span { color:var(--muted); margin-bottom:10px; }.wordle-modifier strong { font-size:1.4rem; }

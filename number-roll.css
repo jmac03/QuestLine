@@ -8,9 +8,9 @@
 .back-link { display: inline-flex; align-items: center; gap: 9px; color: var(--muted); font-size: .78rem; }
 .back-link:hover { color: var(--ink); }
 .back-link span { color: var(--blue); font-size: 1.15rem; }
-.roll-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin: 58px 0 34px; }
+.roll-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 32px; margin: 58px 0 34px; }
 .roll-heading .eyebrow { margin-bottom: 15px; }
-.roll-heading h1, .login-required h1 { font-size: clamp(3rem, 7vw, 6rem); }
+.roll-heading h1, .login-required h1 { font-size: clamp(3rem, 7vw, 6rem); line-height: .92; }
 .game-intro { max-width: 510px; margin: 20px 0 0; color: var(--muted); font-size: .92rem; line-height: 1.6; }
 .player-badge { display: flex; align-items: center; gap: 10px; max-width: 250px; padding-bottom: 5px; color: var(--muted); font-size: .76rem; }
 .player-badge .profile-avatar { flex: 0 0 auto; }
@@ -54,7 +54,7 @@
 .roll-status { min-height: 1.2em; margin: 12px 0 0; color: var(--muted); font-size: .75rem; text-align: center; }
 .roll-status.is-error, .game-error { color: #a42d24; }
 .history-panel { padding: 29px; }
-.history-heading { display: flex; justify-content: space-between; align-items: end; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.history-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 .history-heading .eyebrow { margin-bottom: 10px; }
 .history-heading h2 { font-size: clamp(1.9rem, 4vw, 2.8rem); letter-spacing: -.07em; }
 .history-cap { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .6rem; }

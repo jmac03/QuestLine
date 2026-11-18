@@ -24,12 +24,19 @@ const profileName = document.querySelector('#profile-name');
 const authDialog = document.querySelector('#auth-dialog');
 const authTitle = document.querySelector('#auth-title');
 const authFormView = document.querySelector('#auth-form-view');
+const passwordResetView = document.querySelector('#password-reset-view');
 const accountView = document.querySelector('#account-view');
 const authForm = document.querySelector('#auth-form');
+const passwordResetForm = document.querySelector('#password-reset-form');
 const authEmail = document.querySelector('#auth-email');
 const authPassword = document.querySelector('#auth-password');
 const authSubmit = document.querySelector('#auth-submit');
+const forgotPasswordButton = document.querySelector('#forgot-password-button');
 const authMessage = document.querySelector('#auth-message');
+const newPassword = document.querySelector('#new-password');
+const confirmPassword = document.querySelector('#confirm-password');
+const passwordResetSubmit = document.querySelector('#password-reset-submit');
+const passwordResetMessage = document.querySelector('#password-reset-message');
 const accountEmail = document.querySelector('#account-email');
 const accountMessage = document.querySelector('#account-message');
 const defaultSongSelect = document.querySelector('#default-song-select');
@@ -44,6 +51,7 @@ const grantList = document.querySelector('#grant-list');
 const defaultThemeButton = document.querySelector('#default-theme-button');
 const rewardsAuthButton = document.querySelector('#rewards-auth-button');
 let isSigningUp = false;
+let isResettingPassword = false;
 let activeUser = null;
 let rewardRequestId = 0;
 let rewardLoadFailures = 0;
@@ -422,6 +430,11 @@ function setAuthMessage(message, isError = false) {
   authMessage.classList.toggle('is-error', isError);
 }
 
+function setPasswordResetMessage(message, isError = false) {
+  passwordResetMessage.textContent = message;
+  passwordResetMessage.classList.toggle('is-error', isError);
+}
+
 function setAccountMessage(message, isError = false) {
   accountMessage.textContent = message;
   accountMessage.classList.toggle('is-error', isError);
@@ -452,15 +465,31 @@ function updateProfile(user) {
 }
 
 function setAuthMode(signUp) {
+  isResettingPassword = false;
   isSigningUp = signUp;
+  authFormView.hidden = false;
+  passwordResetView.hidden = true;
+  accountView.hidden = true;
   authTitle.textContent = signUp ? 'Create your account' : 'Welcome back';
   authSubmit.textContent = signUp ? 'Create account' : 'Sign in';
   authPassword.autocomplete = signUp ? 'new-password' : 'current-password';
+  forgotPasswordButton.hidden = signUp;
   signInTab.classList.toggle('active', !signUp);
   signUpTab.classList.toggle('active', signUp);
   signInTab.setAttribute('aria-pressed', String(!signUp));
   signUpTab.setAttribute('aria-pressed', String(signUp));
   setAuthMessage('');
+}
+
+function showPasswordReset() {
+  isResettingPassword = true;
+  authFormView.hidden = true;
+  passwordResetView.hidden = false;
+  accountView.hidden = true;
+  authTitle.textContent = 'Reset your password';
+  setPasswordResetMessage('');
+  if (!authDialog.open) authDialog.showModal();
+  newPassword.focus();
 }
 
 function showAccount(user) {
@@ -500,6 +529,61 @@ rewardsAuthButton?.addEventListener('click', () => {
 document.querySelector('#dialog-close').addEventListener('click', () => authDialog.close());
 signInTab.addEventListener('click', () => setAuthMode(false));
 signUpTab.addEventListener('click', () => setAuthMode(true));
+
+passwordResetForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!supabaseClient) {
+    setPasswordResetMessage('The account service could not load. Check your connection and try again.', true);
+    return;
+  }
+
+  if (newPassword.value !== confirmPassword.value) {
+    setPasswordResetMessage('The passwords do not match.', true);
+    confirmPassword.focus();
+    return;
+  }
+
+  passwordResetSubmit.disabled = true;
+  setPasswordResetMessage('');
+  try {
+    const { error } = await supabaseClient.auth.updateUser({ password: newPassword.value });
+    if (error) throw error;
+    passwordResetForm.reset();
+    setPasswordResetMessage('Your password has been updated.');
+  } catch (error) {
+    setPasswordResetMessage(error instanceof Error ? error.message : 'The password could not be updated.', true);
+  } finally {
+    passwordResetSubmit.disabled = false;
+  }
+});
+
+forgotPasswordButton.addEventListener('click', async () => {
+  if (!supabaseClient) {
+    setAuthMessage('The account service could not load. Check your connection and try again.', true);
+    return;
+  }
+
+  const email = authEmail.value.trim();
+  if (!email) {
+    authEmail.focus();
+    setAuthMessage('Enter your email address first.', true);
+    return;
+  }
+
+  forgotPasswordButton.disabled = true;
+  setAuthMessage('');
+  try {
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.href.split(/[?#]/)[0],
+    });
+    if (error) throw error;
+    setAuthMessage('If an account uses that email, a password reset link is on its way.');
+  } catch (error) {
+    setAuthMessage(error instanceof Error ? error.message : 'The password reset request could not be completed.', true);
+  } finally {
+    forgotPasswordButton.disabled = false;
+  }
+});
 
 // Submitting the auth form either signs a user in or creates a new account.
 authForm.addEventListener('submit', async (event) => {
@@ -575,10 +659,14 @@ signOutButton.addEventListener('click', async () => {
 
 // Initialize the auth listener and session restore once the page loads.
 if (supabaseClient) {
-  supabaseClient.auth.onAuthStateChange((_event, session) => {
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      showPasswordReset();
+      return;
+    }
     updateProfile(session?.user || null);
     if (rewardStatus) loadRewardData(session?.user || null);
-    if (authDialog.open) showAccount(session?.user || null);
+    if (authDialog.open && !isResettingPassword) showAccount(session?.user || null);
     if (session) continueToRequestedPage();
   });
 
