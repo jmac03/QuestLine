@@ -2,10 +2,12 @@ import { test, expect } from '@playwright/test';
 import { openPage } from '../helpers/open-page.mjs';
 
 test.describe('Wordle game', () => {
-  test('gates signed-out users', async ({ page }) => {
+  test('lets signed-out users play locally', async ({ page }) => {
     await openPage(page, '/wordle.html', { authenticated: false });
-    await expect(page.locator('#login-required')).toBeVisible();
-    await expect(page.locator('#wordle-game')).toBeHidden();
+    await expect(page.locator('#wordle-game')).toBeVisible();
+    await page.locator('#start-button').click();
+    await expect(page.locator('#play-panel')).toBeVisible();
+    await expect(page.locator('#wordle-status')).toContainText('Playing as a guest');
   });
 
   test('starts with the selected settings and renders feedback rows', async ({ page }) => {
